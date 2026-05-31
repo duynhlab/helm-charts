@@ -1,0 +1,45 @@
+# chart-testing (ct install) + local KinD e2e values.
+# Uses a stub HTTP image (echo-server returns 200 on any path) so the chart
+# installs with no DB/SLO deps, and turns on gRPC so the headless Service is
+# exercised. The pod doesn't actually serve gRPC — the e2e asserts the headless
+# Service + endpoints render and select the ready pod.
+name: mop-e2e
+replicaCount: 1
+
+image:
+  repository: ealen/echo-server
+  tag: "0.9.2"
+  pullPolicy: IfNotPresent
+
+# echo-server listens on :80 and 200s on every path — point the chart at it.
+containerPort: 80
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 80
+  portName: http
+
+livenessProbe:
+  enabled: true
+  httpGet:
+    path: /
+    port: 80
+  initialDelaySeconds: 2
+  periodSeconds: 5
+readinessProbe:
+  enabled: true
+  httpGet:
+    path: /
+    port: 80
+  initialDelaySeconds: 2
+  periodSeconds: 5
+
+# Exercise the gRPC headless Service.
+grpc:
+  enabled: true
+  port: 9090
+
+migrations:
+  enabled: false
+slo:
+  enabled: false

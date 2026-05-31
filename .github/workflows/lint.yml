@@ -1,0 +1,58 @@
+name: Lint Helm Charts
+
+run-name: Lint Helm Charts
+
+on:
+  pull_request:
+    paths:
+      - 'charts/**'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6
+
+      - name: Install Helm
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 #v4.3.1
+        with:
+          version: v3.9.0
+
+      - name: Lint all charts
+        run: |
+          exit_code=0
+          for d in charts/*/; do
+            chart_name=$(basename "$d")
+            echo "::group::Linting $chart_name"
+            if ! helm lint "$d"; then
+              exit_code=1
+            fi
+            echo "::endgroup::"
+          done
+          exit $exit_code
+
+      - name: Template dry-run all charts
+        run: |
+          exit_code=0
+          for d in charts/*/; do
+            chart_name=$(basename "$d")
+            echo "::group::Template $chart_name"
+            if ! helm template test "$d" --namespace test; then
+              exit_code=1
+            fi
+            echo "::endgroup::"
+          done
+          exit $exit_code
+
+      - name: Lint mop chart (SLO enabled)
+        run: helm lint charts/mop/ --set name=test --set slo.enabled=true
+
+      - name: Lint mop chart (SLO disabled)
+        run: helm lint charts/mop/ --set name=test
+
+      - name: Template dry-run mop (SLO enabled)
+        run: helm template test charts/mop/ --set name=test --set slo.enabled=true --namespace test
+
+      - name: Template dry-run mop (gRPC enabled)
+        run: helm template test charts/mop/ --set name=test --set grpc.enabled=true --namespace test

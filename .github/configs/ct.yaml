@@ -1,0 +1,6 @@
+# chart-testing (ct) config for lint-and-install on KinD.
+target-branch: main
+chart-dirs:
+  - charts
+validate-maintainers: false
+helm-extra-args: --timeout 180s

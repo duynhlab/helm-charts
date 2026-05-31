@@ -1,0 +1,42 @@
+name: E2E (KinD)
+run-name: 🧪 E2E (KinD)
+
+on:
+  pull_request:
+    paths:
+      - 'charts/**'
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.16.0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2
+
+      - name: List changed charts
+        id: list-changed
+        run: |
+          changed=$(ct list-changed --config .github/configs/ct.yaml)
+          if [ -n "$changed" ]; then echo "changed=true" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Create KinD cluster
+        if: steps.list-changed.outputs.changed == 'true'
+        uses: helm/kind-action@v1
+
+      - name: Lint + install changed charts on KinD (+ helm test)
+        if: steps.list-changed.outputs.changed == 'true'
+        run: ct lint-and-install --config .github/configs/ct.yaml
