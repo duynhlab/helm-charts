@@ -1,4 +1,4 @@
-# duynhlab Helm charts
+# Helm charts
 
 Helm charts for the duynhlab microservices platform.
 
