@@ -151,8 +151,8 @@ slo:
 
 # --- Database Migrations Configuration ---
 
-# Enable database migrations via Flyway init container
-# When enabled, a Flyway init container will run migrations before the main container starts
+# Enable database migrations via an init container (golang-migrate, embedded in
+# the app binary; runs before the main container starts)
 migrations:
   enabled: false  # Set to true to run schema migrations in an init container
   # Migrations run via the app image's `migrate` subcommand (golang-migrate,
