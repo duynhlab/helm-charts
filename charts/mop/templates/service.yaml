@@ -14,4 +14,3 @@ spec:
       targetPort: {{ .Values.service.targetPort }}
       protocol: TCP
       name: {{ .Values.service.portName | default "http" }}
-

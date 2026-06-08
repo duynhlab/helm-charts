@@ -173,4 +173,3 @@ migrations:
   # envFrom:
   #   configMapRef: "migration-config"
   #   secretRef: "db-secret"  # Will be used for DB_PASSWORD
-
