@@ -151,14 +151,13 @@ slo:
 
 # --- Database Migrations Configuration ---
 
-# Enable database migrations via Flyway init container
-# When enabled, a Flyway init container will run migrations before the main container starts
+# Enable database migrations via an init container (golang-migrate, embedded in
+# the app binary; runs before the main container starts)
 migrations:
-  enabled: false  # Set to true to enable migrations
-  # Flyway migration Docker image (e.g., ghcr.io/duynhne/auth-service/auth-init:v6)
-  # This image should contain the migration SQL files in /flyway/sql/
-  image: ""  # e.g., ghcr.io/duynhne/auth-service/auth-init:v6
-  imagePullPolicy: IfNotPresent
+  enabled: false  # Set to true to run schema migrations in an init container
+  # Migrations run via the app image's `migrate` subcommand (golang-migrate,
+  # embedded in the binary) — no separate migration image. Point env.DB_HOST at
+  # the DIRECT database host (not a transaction pooler).
   # Environment variables for migration init container (key-value pairs)
   env: {}
   # Example:
@@ -174,4 +173,3 @@ migrations:
   # envFrom:
   #   configMapRef: "migration-config"
   #   secretRef: "db-secret"  # Will be used for DB_PASSWORD
-
