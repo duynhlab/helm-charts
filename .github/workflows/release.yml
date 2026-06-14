@@ -9,36 +9,10 @@ on:
       - 'charts/**'
 
 permissions:
-  contents: write # publish chart to gh-pages branch
+  contents: read
   packages: write # publish chart to ghcr.io
 
 jobs:
-  release-gh-pages:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 #v5
-        with:
-          fetch-depth: 0
-
-      - name: Configure Git
-        run: |
-          git config --local user.email "duynebot@users.noreply.github.com"
-          git config --local user.name "Auto Release Bot"
-
-      - name: Install Helm
-        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 #v4.3.1
-        with:
-          version: v3.9.0
-          
-      # Publish charts to gh-pages branch
-      - name: Publish charts to GitHub Pages
-        uses: helm/chart-releaser-action@3e001cb8c68933439c7e721650f20a07a1a5c61e #v1.7.0
-        with:
-          config: .github/configs/cr.yaml
-        env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-
   release-ghcr:
     runs-on: ubuntu-latest
     steps:
@@ -46,11 +20,6 @@ jobs:
         uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 #v5
         with:
           fetch-depth: 0
-
-      - name: Configure Git
-        run: |
-          git config --local user.email "duynebot@users.noreply.github.com"
-          git config --local user.name "Auto Release Bot"
 
       - name: Install Helm
         uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 #v4.3.1
@@ -75,7 +44,7 @@ jobs:
       - name: Publish Charts to OCI
         run: |
           for pkg in .cr-release-packages/*; do
-            echo ${pkg}
+            echo "${pkg}"
             if [ -z "${pkg:-}" ]; then
               break
             fi
