@@ -1,0 +1,21 @@
+name: Renovate
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # daily 02:00 (Asia/Ho_Chi_Minh per .renovaterc.json5)
+  workflow_dispatch:
+
+permissions:
+  contents: read # Renovate uses RENOVATE_TOKEN (a PAT) for PRs, not the job token
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v5
+      - name: Run Renovate
+        uses: renovatebot/github-action@693b9ef15eec82123529a37c782242f091365961 # v46.1.14
+        with:
+          configurationFile: .renovaterc.json5
+          token: ${{ secrets.RENOVATE_TOKEN }}
