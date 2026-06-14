@@ -1,0 +1,15 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: [
+    "config:recommended",
+    "docker:enableMajor",
+    ":dependencyDashboard",
+    ":disableRateLimiting",
+    ":semanticCommits",
+    ":timezone(Asia/Ho_Chi_Minh)",
+  ],
+  dependencyDashboardTitle: "Renovate Dashboard",
+  // Default managers cover this repo: github-actions (workflow action versions —
+  // keeps the SHA pins + their `# vX` comments current, incl. the Node-20 actions)
+  // and helmv3 (charts/*/Chart.yaml dependencies, when any are added).
+}
