@@ -149,6 +149,32 @@ slo:
   errorRate:
     objective: 99.0
 
+# --- Worker (background processor) Configuration ---
+
+# Run a separate long-running Deployment of the app image's `worker` subcommand
+# (e.g. order-service's Temporal order-fulfillment worker). It is named
+# "<name>-worker" with its own selector, reuses the main env (.Values.env) plus
+# worker.env, and exposes /health, /ready and /metrics on the service port for
+# HTTP probes (the process serves no app traffic).
+worker:
+  enabled: false
+  replicaCount: 1
+  # Extra env appended to .Values.env for the worker only (e.g. Temporal settings
+  # and any addresses the worker needs but the API doesn't).
+  env: []
+  # Example:
+  # env:
+  #   - name: TEMPORAL_HOSTPORT
+  #     value: "temporal-frontend.temporal.svc.cluster.local:7233"
+  #   - name: TEMPORAL_NAMESPACE
+  #     value: "mop"
+  #   - name: TASK_QUEUE
+  #     value: "order-fulfillment"
+  #   - name: PRODUCT_GRPC_ADDR
+  #     value: "dns:///product.product.svc.cluster.local:9090"
+  # Optional per-worker resources; falls back to .Values.resources when empty.
+  resources: {}
+
 # --- Database Migrations Configuration ---
 
 # Enable database migrations via an init container (golang-migrate, embedded in
