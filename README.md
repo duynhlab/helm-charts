@@ -13,7 +13,7 @@ Helm charts for the duynhlab microservices platform.
 **OCI (GHCR):**
 
 ```bash
-helm install <release> oci://ghcr.io/duynhlab/helm-charts/mop --version 0.8.0 \
+helm install <release> oci://ghcr.io/duynhlab/helm-charts/mop --version 0.12.0 \
   --set name=<svc> --set image.repository=ghcr.io/duynhlab/<svc>-service/<svc>
 ```
 
@@ -22,18 +22,8 @@ helm install <release> oci://ghcr.io/duynhlab/helm-charts/mop --version 0.8.0 \
 ```bash
 helm repo add duynhlab https://duynhlab.github.io/helm-charts
 helm repo update
-helm install <release> duynhlab/mop --version 0.8.0 --set name=<svc> ...
+helm install <release> duynhlab/mop --version 0.12.0 --set name=<svc> ...
 ```
-
-## gRPC (east-west)
-
-Set `service.grpc.enabled=true` (default port `9090`) and the chart adds a `grpc`
-named port to the **same** ClusterIP Service (alongside `http`), with
-`appProtocol: grpc`. A worker / non-serving release sets `service.enabled=false`.
-
-> Note: a ClusterIP Service does not load-balance gRPC per-RPC — HTTP/2 reuses one
-> connection, so RPCs pin to a single pod. Use a service mesh (Istio/Linkerd) for
-> L7 gRPC balancing.
 
 ## Develop
 
