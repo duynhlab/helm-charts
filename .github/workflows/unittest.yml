@@ -1,0 +1,33 @@
+name: Unit Test Helm Charts
+
+run-name: Unit Test Helm Charts
+
+on:
+  pull_request:
+    paths:
+      - 'charts/**'
+
+jobs:
+  unittest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # helm-unittest renders templates and asserts on the output — no cluster
+      # needed. Pinned by digest (helmunittest/helm-unittest:latest @ 2026-06)
+      # for reproducible runs; the image bundles helm + the plugin.
+      - name: Run helm unit tests
+        run: |
+          docker run --rm \
+            --user "$(id -u):$(id -g)" -e HOME=/tmp \
+            -v "${{ github.workspace }}":/apps \
+            helmunittest/helm-unittest@sha256:4684b7cf1e1a20ce3ff2cbfcceda36566d862d6024fa23684955d10ef6d51ab1 \
+            --strict -t JUnit -o junit.xml charts/mop
+
+      - name: Publish test results
+        uses: mikepenz/action-junit-report@v5
+        if: always()
+        with:
+          report_paths: 'junit.xml'
+          detailed_summary: true
