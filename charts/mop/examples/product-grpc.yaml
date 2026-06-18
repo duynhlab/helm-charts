@@ -1,0 +1,24 @@
+# Case: service that also serves gRPC east-west traffic. The chart renders a
+# headless Service (<name>-grpc, clusterIP: None) so dns:/// + round_robin
+# balances RPCs across all pods.
+# Install: helm install product ./charts/mop -f charts/mop/examples/product-grpc.yaml
+name: product
+replicaCount: 3
+
+image:
+  repository: ghcr.io/duynhne/product
+  tag: v6
+
+grpc:
+  enabled: true
+  port: 9090
+
+env:
+  - name: SERVICE_NAME
+    value: "product"
+  - name: PORT
+    value: "8080"
+  - name: GRPC_PORT
+    value: "9090"
+  - name: ENV
+    value: "production"

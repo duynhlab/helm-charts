@@ -1,0 +1,34 @@
+# Case: API service that runs DB schema migrations in an init container before
+# the main container starts (golang-migrate, embedded in the app binary).
+# Point migrations.env.DB_HOST at the DIRECT database host (not a pooler).
+# Install: helm install order ./charts/mop -f charts/mop/examples/order-api.yaml
+name: order
+replicaCount: 2
+
+image:
+  repository: ghcr.io/duynhne/order
+  tag: v6
+
+migrations:
+  enabled: true
+  env:
+    DB_HOST: "postgres.db.svc.cluster.local"
+    DB_PORT: "5432"
+    DB_NAME: "orders"
+    DB_USER: "order"
+    DB_SSLMODE: "require"
+  envFrom:
+    secretRef: "order-db"        # provides DB_PASSWORD (key: password)
+
+env:
+  - name: SERVICE_NAME
+    value: "order"
+  - name: PORT
+    value: "8080"
+  - name: DB_HOST
+    value: "postgres.db.svc.cluster.local"
+  - name: DB_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: order-db
+        key: password
