@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # helm-unittest renders templates and asserts on the output — no cluster
       # needed. Pinned by digest (helmunittest/helm-unittest:latest @ 2026-06)
