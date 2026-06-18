@@ -1,0 +1,30 @@
+# Case: background worker. A worker is just THIS chart deployed as a separate
+# release from the SAME image, with args: ["worker"] and no Service. Pairs with
+# order-api.yaml (same image, different process).
+# Install: helm install order-worker ./charts/mop -f charts/mop/examples/order-worker.yaml
+name: order-worker
+replicaCount: 1
+
+image:
+  repository: ghcr.io/duynhne/order
+  tag: v6
+
+# Run the app image's `worker` subcommand instead of the HTTP API.
+args: ["worker"]
+
+# The worker serves no app traffic — skip the Service. It still exposes
+# /health, /ready and /metrics on containerPort for probes + metrics scraping.
+service:
+  enabled: false
+
+env:
+  - name: SERVICE_NAME
+    value: "order-worker"
+  - name: TEMPORAL_HOSTPORT
+    value: "temporal-frontend.temporal.svc.cluster.local:7233"
+  - name: TEMPORAL_NAMESPACE
+    value: "mop"
+  - name: TASK_QUEUE
+    value: "order-fulfillment"
+  - name: PRODUCT_GRPC_ADDR
+    value: "dns:///product.product.svc.cluster.local:9090"

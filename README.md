@@ -6,7 +6,7 @@ Helm charts for the duynhlab microservices platform.
 
 | Chart | Description |
 |-------|-------------|
-| [`mop`](charts/mop) | Generic chart for the Go microservices (Microservices Observability Platform) — Deployment, HTTP + headless gRPC Services, Flyway migrations, Sloth SLO. |
+| [`mop`](charts/mop) | Generic chart for the Go microservices (Microservices Observability Platform) — single Deployment, one multi-port Service (http + optional grpc), golang-migrate init container, Sloth SLO. |
 
 ## Install
 
@@ -27,9 +27,13 @@ helm install <release> duynhlab/mop --version 0.8.0 --set name=<svc> ...
 
 ## gRPC (east-west)
 
-Set `grpc.enabled=true` (default port `9090`) and the chart renders a **headless**
-`<name>-grpc` Service (`clusterIP: None`) alongside the HTTP Service, so gRPC
-clients using the `dns:///` resolver + `round_robin` balance RPCs across all pods.
+Set `service.grpc.enabled=true` (default port `9090`) and the chart adds a `grpc`
+named port to the **same** ClusterIP Service (alongside `http`), with
+`appProtocol: grpc`. A worker / non-serving release sets `service.enabled=false`.
+
+> Note: a ClusterIP Service does not load-balance gRPC per-RPC — HTTP/2 reuses one
+> connection, so RPCs pin to a single pod. Use a service mesh (Istio/Linkerd) for
+> L7 gRPC balancing.
 
 ## Develop
 

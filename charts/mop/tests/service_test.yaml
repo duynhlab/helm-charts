@@ -1,0 +1,76 @@
+suite: service
+templates:
+  - service.yaml
+tests:
+  - it: renders a single HTTP ClusterIP Service by default
+    set:
+      name: auth
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: auth
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - lengthEqual:
+          path: spec.ports
+          count: 1
+      - equal:
+          path: spec.ports[0].name
+          value: http
+      - equal:
+          path: spec.ports[0].port
+          value: 8080
+      - equal:
+          path: spec.ports[0].targetPort
+          value: http
+      - equal:
+          path: spec.ports[0].appProtocol
+          value: http
+      - equal:
+          path: spec.selector.app
+          value: auth
+
+  - it: renders no Service when service.enabled is false (worker release)
+    set:
+      name: order-worker
+      service.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: adds a grpc port to the same Service when service.grpc.enabled
+    set:
+      name: product
+      service.grpc.enabled: true
+      service.grpc.port: 9090
+    asserts:
+      - hasDocuments:
+          count: 1
+      - lengthEqual:
+          path: spec.ports
+          count: 2
+      - equal:
+          path: spec.ports[1].name
+          value: grpc
+      - equal:
+          path: spec.ports[1].port
+          value: 9090
+      - equal:
+          path: spec.ports[1].targetPort
+          value: grpc
+      - equal:
+          path: spec.ports[1].appProtocol
+          value: grpc
+
+  - it: exposes only the http port by default (no grpc)
+    set:
+      name: auth
+    asserts:
+      - lengthEqual:
+          path: spec.ports
+          count: 1

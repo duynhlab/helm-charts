@@ -1,0 +1,42 @@
+suite: slo
+templates:
+  - slo.yaml
+tests:
+  - it: renders nothing when slo.enabled is false (default)
+    set:
+      name: auth
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders a PrometheusServiceLevel with 3 SLOs when slo.enabled
+    set:
+      name: auth
+      slo.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: PrometheusServiceLevel
+      - equal:
+          path: metadata.name
+          value: auth
+      - equal:
+          path: metadata.namespace
+          value: monitoring
+      - equal:
+          path: spec.service
+          value: auth
+      - lengthEqual:
+          path: spec.slos
+          count: 3
+
+  - it: honors the availability objective override
+    set:
+      name: auth
+      slo.enabled: true
+      slo.availability.objective: 99.9
+    asserts:
+      - equal:
+          path: spec.slos[0].objective
+          value: 99.9

@@ -1,0 +1,23 @@
+suite: test-connection
+templates:
+  - tests/test-connection.yaml
+tests:
+  - it: renders the helm-test Pod by default
+    set:
+      name: auth
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Pod
+      - equal:
+          path: metadata.name
+          value: auth-test-connection
+
+  - it: renders no test Pod when service.enabled is false (worker release)
+    set:
+      name: auth
+      service.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0

@@ -2,17 +2,17 @@
 apiVersion: sloth.slok.dev/v1
 kind: PrometheusServiceLevel
 metadata:
-  name: {{ include "microservice.fullname" . }}
+  name: {{ include "mop.fullname" . }}
   namespace: {{ .Values.slo.namespace | default "monitoring" }}
   labels:
-    {{- include "microservice.labels" . | nindent 4 }}
+    {{- include "mop.labels" . | nindent 4 }}
 spec:
   service: {{ .Values.name | quote }}
   labels:
     team: {{ .Values.slo.team | default "platform" | quote }}
     env: {{ .Values.slo.env | default "monitoring" | quote }}
     service: {{ .Values.name | quote }}
-    namespace: {{ include "microservice.namespace" . | quote }}
+    namespace: {{ include "mop.namespace" . | quote }}
   slos:
     - name: "availability"
       objective: {{ .Values.slo.availability.objective }}
@@ -22,14 +22,14 @@ spec:
           errorQuery: |
             sum(rate(request_duration_seconds_count{
               app={{ .Values.name | quote }},
-              namespace={{ include "microservice.namespace" . | quote }},
+              namespace={{ include "mop.namespace" . | quote }},
               job=~"microservices",
               code=~"5.."
             }[{{`{{.window}}`}}]))
           totalQuery: |
             sum(rate(request_duration_seconds_count{
               app={{ .Values.name | quote }},
-              namespace={{ include "microservice.namespace" . | quote }},
+              namespace={{ include "mop.namespace" . | quote }},
               job=~"microservices"
             }[{{`{{.window}}`}}]))
       alerting:
@@ -58,20 +58,20 @@ spec:
           errorQuery: |
             sum(rate(request_duration_seconds_count{
               app={{ .Values.name | quote }},
-              namespace={{ include "microservice.namespace" . | quote }},
+              namespace={{ include "mop.namespace" . | quote }},
               job=~"microservices"
             }[{{`{{.window}}`}}]))
             -
             sum(rate(request_duration_seconds_bucket{
               app={{ .Values.name | quote }},
-              namespace={{ include "microservice.namespace" . | quote }},
+              namespace={{ include "mop.namespace" . | quote }},
               job=~"microservices",
               le={{ .Values.slo.latency.threshold | quote }}
             }[{{`{{.window}}`}}]))
           totalQuery: |
             sum(rate(request_duration_seconds_count{
               app={{ .Values.name | quote }},
-              namespace={{ include "microservice.namespace" . | quote }},
+              namespace={{ include "mop.namespace" . | quote }},
               job=~"microservices"
             }[{{`{{.window}}`}}]))
       alerting:
@@ -100,14 +100,14 @@ spec:
           errorQuery: |
             sum(rate(request_duration_seconds_count{
               app={{ .Values.name | quote }},
-              namespace={{ include "microservice.namespace" . | quote }},
+              namespace={{ include "mop.namespace" . | quote }},
               job=~"microservices",
               code=~"4..|5.."
             }[{{`{{.window}}`}}]))
           totalQuery: |
             sum(rate(request_duration_seconds_count{
               app={{ .Values.name | quote }},
-              namespace={{ include "microservice.namespace" . | quote }},
+              namespace={{ include "mop.namespace" . | quote }},
               job=~"microservices"
             }[{{`{{.window}}`}}]))
       alerting:

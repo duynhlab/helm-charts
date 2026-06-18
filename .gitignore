@@ -1,3 +1,6 @@
 .cr-release-packages/
 .cr-index/
 *.tgz
+
+# helm-unittest JUnit output
+junit*.xml

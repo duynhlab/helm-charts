@@ -1,16 +1,29 @@
+{{- if .Values.service.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "microservice.fullname" . }}
-  namespace: {{ include "microservice.namespace" . }}
+  name: {{ include "mop.fullname" . }}
+  namespace: {{ include "mop.namespace" . }}
   labels:
-    {{- include "microservice.labels" . | nindent 4 }}
+    {{- include "mop.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
   selector:
-    {{- include "microservice.selectorLabels" . | nindent 4 }}
+    {{- include "mop.selectorLabels" . | nindent 4 }}
   ports:
-    - port: {{ .Values.service.port }}
-      targetPort: {{ .Values.service.targetPort }}
+    - name: http
+      port: {{ .Values.service.http.port }}
+      targetPort: http
       protocol: TCP
-      name: {{ .Values.service.portName | default "http" }}
+      appProtocol: http
+    {{- if .Values.service.grpc.enabled }}
+    # gRPC shares the same Service. NOTE: a ClusterIP Service does not do gRPC
+    # client-side round-robin (HTTP/2 pins one connection to one pod) — use a
+    # service mesh for L7 balancing.
+    - name: grpc
+      port: {{ .Values.service.grpc.port }}
+      targetPort: grpc
+      protocol: TCP
+      appProtocol: grpc
+    {{- end }}
+{{- end }}

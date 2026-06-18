@@ -1,0 +1,129 @@
+suite: deployment
+templates:
+  - deployment.yaml
+tests:
+  - it: renders a Deployment named after .Values.name
+    set:
+      name: auth
+      image.repository: ghcr.io/duynhne/auth
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: auth
+      - equal:
+          path: spec.replicas
+          value: 2
+      - equal:
+          path: spec.selector.matchLabels.app
+          value: auth
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: auth
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/duynhne/auth:v6
+
+  - it: exposes only the http port and no initContainers by default
+    set:
+      name: auth
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].name
+          value: http
+      - lengthEqual:
+          path: spec.template.spec.containers[0].ports
+          count: 1
+      - notExists:
+          path: spec.template.spec.initContainers
+
+  - it: passes args through (worker mode)
+    set:
+      name: order-worker
+      args: [worker]
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args[0]
+          value: worker
+
+  - it: passes a command + args override through
+    set:
+      name: auth
+      command: [/bin/app]
+      args: [serve]
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].command[0]
+          value: /bin/app
+      - equal:
+          path: spec.template.spec.containers[0].args[0]
+          value: serve
+
+  - it: adds the gRPC container port when service.grpc.enabled
+    set:
+      name: product
+      service.grpc.enabled: true
+      service.grpc.containerPort: 9090
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: grpc
+            containerPort: 9090
+            protocol: TCP
+
+  - it: runs the migrate initContainer when migrations.enabled
+    set:
+      name: order
+      migrations.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: migrate
+      - equal:
+          path: spec.template.spec.initContainers[0].args[0]
+          value: migrate
+
+  - it: injects DB_PASSWORD into the migrate initContainer from the secret
+    set:
+      name: order
+      migrations.enabled: true
+      migrations.envFrom.secretRef: order-db
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].env[0].name
+          value: DB_PASSWORD
+      - equal:
+          path: spec.template.spec.initContainers[0].env[0].valueFrom.secretKeyRef.name
+          value: order-db
+
+  - it: passes service env through to the container
+    set:
+      name: auth
+      env:
+        - name: SERVICE_NAME
+          value: auth
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SERVICE_NAME
+            value: auth
+
+  - it: renders liveness and readiness probes by default
+    set:
+      name: auth
+    asserts:
+      - isNotNull:
+          path: spec.template.spec.containers[0].livenessProbe
+      - isNotNull:
+          path: spec.template.spec.containers[0].readinessProbe
+
+  - it: omits the liveness probe when disabled
+    set:
+      name: auth
+      livenessProbe.enabled: false
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].livenessProbe
