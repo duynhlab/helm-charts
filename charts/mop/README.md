@@ -1,6 +1,6 @@
 # mop
 
-![Version: 0.11.0](https://img.shields.io/badge/Version-0.11.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 0.12.0](https://img.shields.io/badge/Version-0.12.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 A generic Helm chart for deploying Go microservices (Microservices Observability Platform)
 
@@ -17,10 +17,7 @@ A generic Helm chart for deploying Go microservices (Microservices Observability
 | affinity | object | `{}` |  |
 | args | list | `[]` |  |
 | command | list | `[]` |  |
-| containerPort | int | `8080` |  |
 | env | list | `[]` |  |
-| grpc.enabled | bool | `false` |  |
-| grpc.port | int | `9090` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `""` |  |
 | image.tag | string | `"v6"` |  |
@@ -49,9 +46,11 @@ A generic Helm chart for deploying Go microservices (Microservices Observability
 | resources.requests.memory | string | `"24Mi"` |  |
 | securityContext | object | `{}` |  |
 | service.enabled | bool | `true` |  |
-| service.port | int | `8080` |  |
-| service.portName | string | `"http"` |  |
-| service.targetPort | int | `8080` |  |
+| service.grpc.containerPort | int | `9090` |  |
+| service.grpc.enabled | bool | `false` |  |
+| service.grpc.port | int | `9090` |  |
+| service.http.containerPort | int | `8080` |  |
+| service.http.port | int | `8080` |  |
 | service.type | string | `"ClusterIP"` |  |
 | slo.availability.objective | float | `99.5` |  |
 | slo.enabled | bool | `false` |  |

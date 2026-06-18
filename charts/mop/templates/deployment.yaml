@@ -89,11 +89,13 @@ spec:
             {{- toYaml .Values.env | nindent 12 }}
           {{- end }}
           ports:
-            - containerPort: {{ .Values.containerPort }}
-              name: http
-            {{- if .Values.grpc.enabled }}
-            - containerPort: {{ .Values.grpc.port }}
-              name: grpc
+            - name: http
+              containerPort: {{ .Values.service.http.containerPort }}
+              protocol: TCP
+            {{- if .Values.service.grpc.enabled }}
+            - name: grpc
+              containerPort: {{ .Values.service.grpc.containerPort }}
+              protocol: TCP
             {{- end }}
           {{- if .Values.livenessProbe }}
           {{- if ne (.Values.livenessProbe.enabled | toString) "false" }}

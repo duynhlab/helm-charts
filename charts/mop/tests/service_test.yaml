@@ -16,9 +16,21 @@ tests:
       - equal:
           path: spec.type
           value: ClusterIP
+      - lengthEqual:
+          path: spec.ports
+          count: 1
+      - equal:
+          path: spec.ports[0].name
+          value: http
       - equal:
           path: spec.ports[0].port
           value: 8080
+      - equal:
+          path: spec.ports[0].targetPort
+          value: http
+      - equal:
+          path: spec.ports[0].appProtocol
+          value: http
       - equal:
           path: spec.selector.app
           value: auth
@@ -31,45 +43,34 @@ tests:
       - hasDocuments:
           count: 0
 
-  - it: renders HTTP + headless gRPC Service when grpc.enabled
+  - it: adds a grpc port to the same Service when service.grpc.enabled
     set:
       name: product
-      grpc.enabled: true
-      grpc.port: 9090
-    asserts:
-      - hasDocuments:
-          count: 2
-
-  - it: the gRPC Service is headless and named <name>-grpc
-    documentIndex: 1
-    set:
-      name: product
-      grpc.enabled: true
-      grpc.port: 9090
-    asserts:
-      - isKind:
-          of: Service
-      - equal:
-          path: metadata.name
-          value: product-grpc
-      - equal:
-          path: spec.clusterIP
-          value: None
-      - equal:
-          path: spec.ports[0].port
-          value: 9090
-      - equal:
-          path: spec.ports[0].name
-          value: grpc
-
-  - it: renders only the gRPC Service when service.enabled=false but grpc.enabled
-    set:
-      name: product
-      service.enabled: false
-      grpc.enabled: true
+      service.grpc.enabled: true
+      service.grpc.port: 9090
     asserts:
       - hasDocuments:
           count: 1
+      - lengthEqual:
+          path: spec.ports
+          count: 2
       - equal:
-          path: metadata.name
-          value: product-grpc
+          path: spec.ports[1].name
+          value: grpc
+      - equal:
+          path: spec.ports[1].port
+          value: 9090
+      - equal:
+          path: spec.ports[1].targetPort
+          value: grpc
+      - equal:
+          path: spec.ports[1].appProtocol
+          value: grpc
+
+  - it: exposes only the http port by default (no grpc)
+    set:
+      name: auth
+    asserts:
+      - lengthEqual:
+          path: spec.ports
+          count: 1

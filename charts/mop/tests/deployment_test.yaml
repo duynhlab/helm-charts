@@ -60,17 +60,18 @@ tests:
           path: spec.template.spec.containers[0].args[0]
           value: serve
 
-  - it: adds the gRPC container port when grpc.enabled
+  - it: adds the gRPC container port when service.grpc.enabled
     set:
       name: product
-      grpc.enabled: true
-      grpc.port: 9090
+      service.grpc.enabled: true
+      service.grpc.containerPort: 9090
     asserts:
       - contains:
           path: spec.template.spec.containers[0].ports
           content:
-            containerPort: 9090
             name: grpc
+            containerPort: 9090
+            protocol: TCP
 
   - it: runs the migrate initContainer when migrations.enabled
     set:

@@ -1,9 +1,9 @@
 # chart-testing (ct lint-and-install) + local KinD e2e values.
 # Uses stefanprodan/podinfo — a real Go microservice that serves HTTP on :9898
 # (/healthz, /readyz, /metrics) and can serve gRPC on :9999 — so the chart installs
-# with no DB/SLO deps and the gRPC headless Service is exercised against a realistic
-# workload. The e2e asserts the HTTP Service + the headless gRPC Service render and
-# select the ready pod.
+# with no DB/SLO deps and the multi-port Service (http + grpc) is exercised against
+# a realistic workload. The e2e asserts the Service renders both ports and selects
+# the ready pod.
 name: mop-e2e
 replicaCount: 1
 
@@ -13,13 +13,17 @@ image:
   pullPolicy: IfNotPresent
 
 # podinfo serves HTTP on 9898 — point the chart at it; expose it on Service :8080.
-containerPort: 9898
+# gRPC port (9999) is added to the SAME Service via service.grpc.enabled.
 service:
   enabled: true
   type: ClusterIP
-  port: 8080
-  targetPort: 9898
-  portName: http
+  http:
+    port: 8080
+    containerPort: 9898
+  grpc:
+    enabled: true
+    port: 9999
+    containerPort: 9999
 
 livenessProbe:
   enabled: true
@@ -35,11 +39,6 @@ readinessProbe:
     port: 9898
   initialDelaySeconds: 2
   periodSeconds: 5
-
-# Exercise the gRPC headless Service (podinfo's gRPC port).
-grpc:
-  enabled: true
-  port: 9999
 
 migrations:
   enabled: false

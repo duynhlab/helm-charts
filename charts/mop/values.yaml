@@ -18,16 +18,23 @@ image:
   pullPolicy: IfNotPresent
 
 # --- Service Configuration ---
+# One Service exposes the http port and, when service.grpc.enabled, an extra grpc
+# port on the SAME Service. Ports use named targetPort (resolved against the
+# container port names) + appProtocol hints.
+# NOTE: gRPC on a ClusterIP Service does NOT get client-side round-robin — HTTP/2
+# reuses one connection so RPCs pin to a single pod. Use a service mesh
+# (Istio/Linkerd) for L7 gRPC balancing.
 
 service:
-  enabled: true   # Set false for releases that serve no traffic (e.g. a worker)
+  enabled: true   # Whole Service on/off — set false for releases that serve no traffic (e.g. a worker)
   type: ClusterIP
-  port: 8080
-  targetPort: 8080
-  portName: http  # Name of the port (http, grpc, metrics, etc.)
-
-# Container port
-containerPort: 8080
+  http:
+    port: 8080           # Service port
+    containerPort: 8080  # container port (named "http")
+  grpc:
+    enabled: false       # Opt-in — only services that actually serve gRPC
+    port: 9090           # Service port
+    containerPort: 9090  # container port (named "grpc")
 
 # --- Entrypoint Override ---
 
@@ -40,16 +47,6 @@ containerPort: 8080
 #     --set name=order-worker --set 'args={worker}' --set service.enabled=false
 command: []
 args: []
-
-# --- gRPC (east-west) Configuration ---
-# When enabled, the container also serves gRPC on grpc.port, and the chart
-# renders a HEADLESS Service (<name>-grpc, clusterIP: None) so gRPC clients
-# using the dns:/// resolver + round_robin balance RPCs across all pods (a normal
-# ClusterIP Service pins one HTTP/2 connection to a single pod). HTTP probes
-# still cover liveness/readiness — the gRPC server shares the process.
-grpc:
-  enabled: false
-  port: 9090
 
 # --- Resource Configuration ---
 

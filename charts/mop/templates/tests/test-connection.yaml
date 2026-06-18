@@ -15,5 +15,5 @@ spec:
     - name: wget
       image: busybox:1.36
       command: ["wget"]
-      args: ["-qO-", "{{ include "mop.fullname" . }}:{{ .Values.service.port }}"]
+      args: ["-qO-", "{{ include "mop.fullname" . }}:{{ .Values.service.http.port }}"]
 {{- end }}
