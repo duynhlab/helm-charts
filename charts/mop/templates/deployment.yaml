@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "microservice.fullname" . }}
-  namespace: {{ include "microservice.namespace" . }}
+  name: {{ include "mop.fullname" . }}
+  namespace: {{ include "mop.namespace" . }}
   labels:
-    {{- include "microservice.labels" . | nindent 4 }}
+    {{- include "mop.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "microservice.selectorLabels" . | nindent 6 }}
+      {{- include "mop.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -17,7 +17,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "microservice.labels" . | nindent 8 }}
+        {{- include "mop.labels" . | nindent 8 }}
     spec:
       {{- if .Values.terminationGracePeriodSeconds }}
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
@@ -44,7 +44,7 @@ spec:
           {{- /* Reuse the app image (migrations are embedded in the binary) and
                  run the `migrate` subcommand via args — the image ENTRYPOINT is
                  the service binary. */}}
-          image: {{ include "microservice.image" . }}
+          image: {{ include "mop.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args: ["migrate"]
           {{- /* Environment variables for migration init container */}}
@@ -71,8 +71,8 @@ spec:
           {{- end }}
       {{- end }}
       containers:
-        - name: {{ include "microservice.name" . }}
-          image: {{ include "microservice.image" . }}
+        - name: {{ include "mop.name" . }}
+          image: {{ include "mop.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- with .Values.securityContext }}
           securityContext:

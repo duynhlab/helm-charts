@@ -2,10 +2,10 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "{{ include "microservice.fullname" . }}-test-connection"
-  namespace: {{ include "microservice.namespace" . }}
+  name: "{{ include "mop.fullname" . }}-test-connection"
+  namespace: {{ include "mop.namespace" . }}
   labels:
-    {{- include "microservice.labels" . | nindent 4 }}
+    {{- include "mop.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": test
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
@@ -15,5 +15,5 @@ spec:
     - name: wget
       image: busybox:1.36
       command: ["wget"]
-      args: ["-qO-", "{{ include "microservice.fullname" . }}:{{ .Values.service.port }}"]
+      args: ["-qO-", "{{ include "mop.fullname" . }}:{{ .Values.service.port }}"]
 {{- end }}
