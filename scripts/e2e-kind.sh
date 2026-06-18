@@ -32,8 +32,8 @@ echo "== headless gRPC Service =="
 cip=$(kubectl -n "$NS" get svc "${RELEASE}-grpc" -o jsonpath='{.spec.clusterIP}')
 [ "$cip" = "None" ] || { echo "FAIL: ${RELEASE}-grpc clusterIP is '$cip', expected None"; exit 1; }
 gport=$(kubectl -n "$NS" get svc "${RELEASE}-grpc" -o jsonpath='{.spec.ports[0].port}')
-[ "$gport" = "9090" ] || { echo "FAIL: gRPC port is '$gport', expected 9090"; exit 1; }
-echo "  ${RELEASE}-grpc: clusterIP=None port=9090 (headless) ✓"
+[ "$gport" = "9999" ] || { echo "FAIL: gRPC port is '$gport', expected 9999"; exit 1; }
+echo "  ${RELEASE}-grpc: clusterIP=None port=9999 (headless) ✓"
 
 echo "== gRPC Service endpoints populated =="
 for _ in $(seq 1 20); do
@@ -45,5 +45,20 @@ echo "  endpoint: $ip ✓"
 
 echo "== helm test =="
 helm test "$RELEASE" -n "$NS" --timeout 120s
+
+echo "== worker-as-release pattern (same chart, separate release, no Service) =="
+# A worker is just this chart deployed again with a different name and no Service.
+# In prod the worker carries args:["worker"]; the stub image has no worker subcommand,
+# so here we only validate the multi-release + service.enabled=false wiring.
+helm install "${RELEASE}-worker" "$CHART" -n "$NS" -f "$VALUES" \
+  --set name="${RELEASE}-worker" \
+  --set service.enabled=false \
+  --set grpc.enabled=false \
+  --wait --timeout 180s
+kubectl -n "$NS" rollout status "deploy/${RELEASE}-worker" --timeout 120s
+if kubectl -n "$NS" get svc "${RELEASE}-worker" >/dev/null 2>&1; then
+  echo "FAIL: ${RELEASE}-worker should render no Service (service.enabled=false)"; exit 1
+fi
+echo "  ${RELEASE}-worker ready, no Service ✓"
 
 echo "E2E PASS ✅"

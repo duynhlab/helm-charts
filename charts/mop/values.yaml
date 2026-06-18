@@ -20,6 +20,7 @@ image:
 # --- Service Configuration ---
 
 service:
+  enabled: true   # Set false for releases that serve no traffic (e.g. a worker)
   type: ClusterIP
   port: 8080
   targetPort: 8080
@@ -27,6 +28,18 @@ service:
 
 # Container port
 containerPort: 8080
+
+# --- Entrypoint Override ---
+
+# command overrides the image ENTRYPOINT (rarely needed — the image entrypoint is
+# the service binary). args are passed to it. Leave both empty for the default
+# (HTTP API) process. A background process (e.g. a Temporal worker) is just this
+# same chart deployed as a SEPARATE release with a different name, its own args,
+# and no Service:
+#   helm install order-worker ./mop -f order.yaml \
+#     --set name=order-worker --set 'args={worker}' --set service.enabled=false
+command: []
+args: []
 
 # --- gRPC (east-west) Configuration ---
 # When enabled, the container also serves gRPC on grpc.port, and the chart
@@ -100,9 +113,10 @@ env: []
 
 # --- Kubernetes Configuration ---
 
-# Labels to add to all resources
-labels:
-  component: api
+# Extra labels added to all resources (key: value). The standard
+# app.kubernetes.io/* labels (incl. app.kubernetes.io/component) are set by the
+# chart — do not duplicate `component` here or it will collide on workload pods.
+labels: {}
 
 # Pod annotations
 podAnnotations: {}
@@ -148,32 +162,6 @@ slo:
     threshold: "0.5"
   errorRate:
     objective: 99.0
-
-# --- Worker (background processor) Configuration ---
-
-# Run a separate long-running Deployment of the app image's `worker` subcommand
-# (e.g. order-service's Temporal order-fulfillment worker). It is named
-# "<name>-worker" with its own selector, reuses the main env (.Values.env) plus
-# worker.env, and exposes /health, /ready and /metrics on the service port for
-# HTTP probes (the process serves no app traffic).
-worker:
-  enabled: false
-  replicaCount: 1
-  # Extra env appended to .Values.env for the worker only (e.g. Temporal settings
-  # and any addresses the worker needs but the API doesn't).
-  env: []
-  # Example:
-  # env:
-  #   - name: TEMPORAL_HOSTPORT
-  #     value: "temporal-frontend.temporal.svc.cluster.local:7233"
-  #   - name: TEMPORAL_NAMESPACE
-  #     value: "mop"
-  #   - name: TASK_QUEUE
-  #     value: "order-fulfillment"
-  #   - name: PRODUCT_GRPC_ADDR
-  #     value: "dns:///product.product.svc.cluster.local:9090"
-  # Optional per-worker resources; falls back to .Values.resources when empty.
-  resources: {}
 
 # --- Database Migrations Configuration ---
 
