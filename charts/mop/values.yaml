@@ -28,6 +28,9 @@ image:
 service:
   enabled: true   # Whole Service on/off — set false for releases that serve no traffic (e.g. a worker)
   type: ClusterIP
+  # Extra Service annotations, e.g. Kong Ingress Controller per-service tuning
+  # (konghq.com/connect-timeout, /read-timeout, /retries, /upstream-policy).
+  annotations: {}
   http:
     port: 8080           # Service port
     containerPort: 8080  # container port (named "http")
