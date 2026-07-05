@@ -17,6 +17,7 @@ A generic Helm chart for deploying Go microservices (Microservices Observability
 | affinity | object | `{}` |  |
 | args | list | `[]` |  |
 | command | list | `[]` |  |
+| component | string | `"api"` | Architectural component, rendered as `app.kubernetes.io/component` (e.g. `api`, `worker`). |
 | env | list | `[]` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `""` |  |

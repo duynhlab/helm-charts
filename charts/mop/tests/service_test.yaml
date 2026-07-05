@@ -74,3 +74,23 @@ tests:
       - lengthEqual:
           path: spec.ports
           count: 1
+
+  - it: labels the Service app.kubernetes.io/component api by default
+    set:
+      name: auth
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: api
+      # component is a metadata label only — never in the selector
+      - notExists:
+          path: spec.selector["app.kubernetes.io/component"]
+
+  - it: honors an overridden component value on the Service label
+    set:
+      name: auth
+      component: gateway
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: gateway

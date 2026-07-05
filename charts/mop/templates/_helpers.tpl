@@ -29,6 +29,9 @@ helm.sh/chart: {{ include "mop.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- with .Values.component }}
+app.kubernetes.io/component: {{ . }}
+{{- end }}
 {{- if .Values.labels }}
 {{- range $key, $value := .Values.labels }}
 {{ $key }}: {{ $value | quote }}

@@ -113,9 +113,14 @@ env: []
 
 # --- Kubernetes Configuration ---
 
+# Architectural component this release plays, rendered as the standard
+# app.kubernetes.io/component label on all resources. Defaults to "api" (an
+# HTTP/gRPC service); a background release sets "worker" (e.g. a Temporal
+# worker). Monitors select on this label (component: api / component: worker).
+component: api
+
 # Extra labels added to all resources (key: value). The standard
-# app.kubernetes.io/* labels (incl. app.kubernetes.io/component) are set by the
-# chart — do not duplicate `component` here or it will collide on workload pods.
+# app.kubernetes.io/* labels are set by the chart — use this only for extras.
 labels: {}
 
 # Pod annotations

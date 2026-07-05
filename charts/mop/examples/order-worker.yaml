@@ -12,6 +12,10 @@ image:
 # Run the app image's `worker` subcommand instead of the HTTP API.
 args: ["worker"]
 
+# Architectural component → app.kubernetes.io/component: worker (default is
+# "api"). Lets monitors target workers separately from API services.
+component: worker
+
 # The worker serves no app traffic — skip the Service. It still exposes
 # /health, /ready and /metrics on containerPort for probes + metrics scraping.
 service:

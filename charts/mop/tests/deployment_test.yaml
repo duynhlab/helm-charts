@@ -47,6 +47,33 @@ tests:
           path: spec.template.spec.containers[0].args[0]
           value: worker
 
+  - it: labels the Deployment and pods app.kubernetes.io/component api by default
+    set:
+      name: auth
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: api
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/component"]
+          value: api
+      # selector must stay name+instance+app only (immutable) — no component
+      - notExists:
+          path: spec.selector.matchLabels["app.kubernetes.io/component"]
+
+  - it: sets component worker for a worker release
+    set:
+      name: order-worker
+      component: worker
+      args: [worker]
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: worker
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/component"]
+          value: worker
+
   - it: passes a command + args override through
     set:
       name: auth
