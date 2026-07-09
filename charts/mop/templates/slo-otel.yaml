@@ -1,0 +1,141 @@
+{{- if and .Values.slo.enabled .Values.slo.otelEnabled }}
+{{- /*
+RFC-0014 P2: new-name (semconv/OTLP) copy of slo.yaml, soaking side-by-side
+with the legacy SLOs. spec.service gets an -otel suffix so Sloth's generated
+slo:sli_error:ratio_rate* series (keyed by sloth_service) never collide with
+the legacy set, and every alert carries pipeline: otel so Alertmanager routes
+it to the staging receiver instead of paging. At P3 cutover this template
+replaces slo.yaml (suffix dropped, legacy template retired).
+
+Query changes vs slo.yaml: request_duration_seconds -> semconv
+http_server_request_duration_seconds, code -> http_response_status_code, and
+the job selector dropped (the OTLP push path has no job label; vmagent
+relabeling provides app/namespace). The latency thresholds rely on the
+13-bucket View pinned by pkg obsx (0.2/0.3/0.5 all exist).
+*/}}
+apiVersion: sloth.slok.dev/v1
+kind: PrometheusServiceLevel
+metadata:
+  name: {{ include "mop.fullname" . }}-otel
+  namespace: {{ .Values.slo.namespace | default "monitoring" }}
+  labels:
+    {{- include "mop.labels" . | nindent 4 }}
+spec:
+  service: {{ printf "%s-otel" .Values.name | quote }}
+  labels:
+    team: {{ .Values.slo.team | default "platform" | quote }}
+    env: {{ .Values.slo.env | default "monitoring" | quote }}
+    service: {{ .Values.name | quote }}
+    namespace: {{ include "mop.namespace" . | quote }}
+    pipeline: otel
+  slos:
+    - name: "availability"
+      objective: {{ .Values.slo.availability.objective }}
+      description: "Availability measures the ratio of successful requests (non-5xx) to total requests"
+      sli:
+        events:
+          errorQuery: |
+            sum(rate(http_server_request_duration_seconds_count{
+              app={{ .Values.name | quote }},
+              namespace={{ include "mop.namespace" . | quote }},
+              http_response_status_code=~"5.."
+            }[{{`{{.window}}`}}]))
+          totalQuery: |
+            sum(rate(http_server_request_duration_seconds_count{
+              app={{ .Values.name | quote }},
+              namespace={{ include "mop.namespace" . | quote }}
+            }[{{`{{.window}}`}}]))
+      alerting:
+        name: {{ .Values.name | title }}HighErrorRateOtel
+        labels:
+          severity: critical
+          category: availability
+          service: {{ .Values.name | quote }}
+          pipeline: otel
+        annotations:
+          summary: "High 5xx error rate detected on {{ .Values.name }} (OTLP path)"
+          description: "Availability SLO is at risk. Current error rate is impacting {{ .Values.name }} service availability."
+        pageAlert:
+          labels:
+            severity: page
+            channel: "#alerts-otel-staging"
+        ticketAlert:
+          labels:
+            severity: ticket
+            channel: "#alerts-otel-staging"
+
+    - name: "latency"
+      objective: {{ .Values.slo.latency.objective }}
+      description: "Latency measures the ratio of requests faster than {{ .Values.slo.latency.threshold }}s to total requests"
+      sli:
+        events:
+          errorQuery: |
+            sum(rate(http_server_request_duration_seconds_count{
+              app={{ .Values.name | quote }},
+              namespace={{ include "mop.namespace" . | quote }}
+            }[{{`{{.window}}`}}]))
+            -
+            sum(rate(http_server_request_duration_seconds_bucket{
+              app={{ .Values.name | quote }},
+              namespace={{ include "mop.namespace" . | quote }},
+              le={{ .Values.slo.latency.threshold | quote }}
+            }[{{`{{.window}}`}}]))
+          totalQuery: |
+            sum(rate(http_server_request_duration_seconds_count{
+              app={{ .Values.name | quote }},
+              namespace={{ include "mop.namespace" . | quote }}
+            }[{{`{{.window}}`}}]))
+      alerting:
+        name: {{ .Values.name | title }}HighLatencyOtel
+        labels:
+          severity: warning
+          category: latency
+          service: {{ .Values.name | quote }}
+          pipeline: otel
+        annotations:
+          summary: "High latency detected on {{ .Values.name }} (OTLP path)"
+          description: "More than {{ sub 100 (int .Values.slo.latency.objective) }}% of requests are slower than {{ .Values.slo.latency.threshold }}s threshold."
+        pageAlert:
+          labels:
+            severity: page
+            channel: "#alerts-otel-staging"
+        ticketAlert:
+          labels:
+            severity: ticket
+            channel: "#alerts-otel-staging"
+
+    - name: "error-rate"
+      objective: {{ .Values.slo.errorRate.objective }}
+      description: "Error rate measures the ratio of successful requests (non-4xx/5xx) to total requests"
+      sli:
+        events:
+          errorQuery: |
+            sum(rate(http_server_request_duration_seconds_count{
+              app={{ .Values.name | quote }},
+              namespace={{ include "mop.namespace" . | quote }},
+              http_response_status_code=~"4..|5.."
+            }[{{`{{.window}}`}}]))
+          totalQuery: |
+            sum(rate(http_server_request_duration_seconds_count{
+              app={{ .Values.name | quote }},
+              namespace={{ include "mop.namespace" . | quote }}
+            }[{{`{{.window}}`}}]))
+      alerting:
+        name: {{ .Values.name | title }}HighOverallErrorRateOtel
+        labels:
+          severity: warning
+          category: errors
+          service: {{ .Values.name | quote }}
+          pipeline: otel
+        annotations:
+          summary: "High overall error rate (4xx + 5xx) on {{ .Values.name }} (OTLP path)"
+          description: "More than {{ sub 100 (int .Values.slo.errorRate.objective) }}% of requests are returning errors."
+        pageAlert:
+          labels:
+            severity: page
+            channel: "#alerts-otel-staging"
+        ticketAlert:
+          labels:
+            severity: ticket
+            channel: "#alerts-otel-staging"
+{{- end }}

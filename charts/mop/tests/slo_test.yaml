@@ -1,8 +1,10 @@
 suite: slo
 templates:
   - slo.yaml
+  - slo-otel.yaml
 tests:
   - it: renders nothing when slo.enabled is false (default)
+    template: slo.yaml
     set:
       name: auth
     asserts:
@@ -10,6 +12,7 @@ tests:
           count: 0
 
   - it: renders a PrometheusServiceLevel with 3 SLOs when slo.enabled
+    template: slo.yaml
     set:
       name: auth
       slo.enabled: true
@@ -32,6 +35,7 @@ tests:
           count: 3
 
   - it: honors the availability objective override
+    template: slo.yaml
     set:
       name: auth
       slo.enabled: true
@@ -40,3 +44,54 @@ tests:
       - equal:
           path: spec.slos[0].objective
           value: 99.9
+
+  - it: renders no otel copy when slo.otelEnabled is false (default)
+    template: slo-otel.yaml
+    set:
+      name: auth
+      slo.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders the otel copy with suffixed identity and staging labels
+    template: slo-otel.yaml
+    set:
+      name: auth
+      slo.enabled: true
+      slo.otelEnabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: PrometheusServiceLevel
+      - equal:
+          path: metadata.name
+          value: auth-otel
+      - equal:
+          path: spec.service
+          value: auth-otel
+      - equal:
+          path: spec.labels.pipeline
+          value: otel
+      - lengthEqual:
+          path: spec.slos
+          count: 3
+      - matchRegex:
+          path: spec.slos[0].sli.events.errorQuery
+          pattern: http_server_request_duration_seconds_count
+      - matchRegex:
+          path: spec.slos[0].sli.events.errorQuery
+          pattern: http_response_status_code=~"5\.\."
+      - notMatchRegex:
+          path: spec.slos[0].sli.events.errorQuery
+          pattern: job=~
+      - equal:
+          path: spec.slos[0].alerting.name
+          value: AuthHighErrorRateOtel
+      - equal:
+          path: spec.slos[0].alerting.labels.pipeline
+          value: otel
+      - equal:
+          path: spec.slos[0].alerting.pageAlert.labels.channel
+          value: "#alerts-otel-staging"
