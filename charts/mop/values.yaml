@@ -157,6 +157,10 @@ securityContext: {}
 # following Google SRE multi-window multi-burn-rate pattern.
 slo:
   enabled: false
+  # RFC-0014 P2: also render the semconv/OTLP copy (slo-otel.yaml) that soaks
+  # side-by-side under sloth_service "<name>-otel" with staging-only alerts.
+  # Requires slo.enabled too. Retired at P3 when the copy becomes canonical.
+  otelEnabled: false
   namespace: "monitoring"  # Namespace where PrometheusServiceLevel CRD is created (where Sloth operator watches)
   team: "platform"
   env: "monitoring"
