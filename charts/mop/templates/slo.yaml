@@ -1,4 +1,11 @@
 {{- if .Values.slo.enabled }}
+{{- /*
+Canonical SLOs on the OTLP push pipeline (RFC-0014 P3 cutover, ADR-016 in
+homelab). Queries use the semconv names — http_server_request_duration_seconds
+with http_response_status_code — and no job selector (the push path has no job
+label; vmagent relabeling provides app/namespace). The latency thresholds rely
+on the 13-bucket View pinned by pkg obsx (0.2/0.3/0.5 all exist).
+*/}}
 apiVersion: sloth.slok.dev/v1
 kind: PrometheusServiceLevel
 metadata:
@@ -20,17 +27,15 @@ spec:
       sli:
         events:
           errorQuery: |
-            sum(rate(request_duration_seconds_count{
+            sum(rate(http_server_request_duration_seconds_count{
               app={{ .Values.name | quote }},
               namespace={{ include "mop.namespace" . | quote }},
-              job=~"microservices",
-              code=~"5.."
+              http_response_status_code=~"5.."
             }[{{`{{.window}}`}}]))
           totalQuery: |
-            sum(rate(request_duration_seconds_count{
+            sum(rate(http_server_request_duration_seconds_count{
               app={{ .Values.name | quote }},
-              namespace={{ include "mop.namespace" . | quote }},
-              job=~"microservices"
+              namespace={{ include "mop.namespace" . | quote }}
             }[{{`{{.window}}`}}]))
       alerting:
         name: {{ .Values.name | title }}HighErrorRate
@@ -56,23 +61,20 @@ spec:
       sli:
         events:
           errorQuery: |
-            sum(rate(request_duration_seconds_count{
+            sum(rate(http_server_request_duration_seconds_count{
               app={{ .Values.name | quote }},
-              namespace={{ include "mop.namespace" . | quote }},
-              job=~"microservices"
+              namespace={{ include "mop.namespace" . | quote }}
             }[{{`{{.window}}`}}]))
             -
-            sum(rate(request_duration_seconds_bucket{
+            sum(rate(http_server_request_duration_seconds_bucket{
               app={{ .Values.name | quote }},
               namespace={{ include "mop.namespace" . | quote }},
-              job=~"microservices",
               le={{ .Values.slo.latency.threshold | quote }}
             }[{{`{{.window}}`}}]))
           totalQuery: |
-            sum(rate(request_duration_seconds_count{
+            sum(rate(http_server_request_duration_seconds_count{
               app={{ .Values.name | quote }},
-              namespace={{ include "mop.namespace" . | quote }},
-              job=~"microservices"
+              namespace={{ include "mop.namespace" . | quote }}
             }[{{`{{.window}}`}}]))
       alerting:
         name: {{ .Values.name | title }}HighLatency
@@ -98,17 +100,15 @@ spec:
       sli:
         events:
           errorQuery: |
-            sum(rate(request_duration_seconds_count{
+            sum(rate(http_server_request_duration_seconds_count{
               app={{ .Values.name | quote }},
               namespace={{ include "mop.namespace" . | quote }},
-              job=~"microservices",
-              code=~"4..|5.."
+              http_response_status_code=~"4..|5.."
             }[{{`{{.window}}`}}]))
           totalQuery: |
-            sum(rate(request_duration_seconds_count{
+            sum(rate(http_server_request_duration_seconds_count{
               app={{ .Values.name | quote }},
-              namespace={{ include "mop.namespace" . | quote }},
-              job=~"microservices"
+              namespace={{ include "mop.namespace" . | quote }}
             }[{{`{{.window}}`}}]))
       alerting:
         name: {{ .Values.name | title }}HighOverallErrorRate
