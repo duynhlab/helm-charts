@@ -1,6 +1,6 @@
 # mop
 
-![Version: 0.12.0](https://img.shields.io/badge/Version-0.12.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 0.16.1](https://img.shields.io/badge/Version-0.16.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 A generic Helm chart for deploying Go microservices (Microservices Observability Platform)
 
@@ -17,7 +17,7 @@ A generic Helm chart for deploying Go microservices (Microservices Observability
 | affinity | object | `{}` |  |
 | args | list | `[]` |  |
 | command | list | `[]` |  |
-| component | string | `"api"` | Architectural component, rendered as `app.kubernetes.io/component` (e.g. `api`, `worker`). |
+| component | string | `"api"` |  |
 | env | list | `[]` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `""` |  |
@@ -46,6 +46,7 @@ A generic Helm chart for deploying Go microservices (Microservices Observability
 | resources.requests.cpu | string | `"20m"` |  |
 | resources.requests.memory | string | `"24Mi"` |  |
 | securityContext | object | `{}` |  |
+| service.annotations | object | `{}` |  |
 | service.enabled | bool | `true` |  |
 | service.grpc.containerPort | int | `9090` |  |
 | service.grpc.enabled | bool | `false` |  |

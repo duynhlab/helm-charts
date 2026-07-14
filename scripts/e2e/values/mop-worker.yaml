@@ -1,0 +1,5 @@
+name: mop-e2e-worker
+service:
+  enabled: false
+  grpc:
+    enabled: false

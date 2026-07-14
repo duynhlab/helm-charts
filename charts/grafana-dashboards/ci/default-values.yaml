@@ -1,0 +1,2 @@
+# Used by chart-testing (ct lint-and-install) on KinD.
+# Defaults in values.yaml are sufficient for install; this file documents the hook path.

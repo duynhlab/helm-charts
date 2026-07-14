@@ -1,0 +1,43 @@
+{{- $root := . -}}
+{{- $enabled := list -}}
+{{- range $name, $dashboard := .Values.dashboards }}
+{{- if $dashboard.enabled }}
+{{- $enabled = append $enabled $name }}
+{{- end }}
+{{- end }}
+{{- if $enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "grafana-dashboards.fullname" . }}-test-dashboards
+  labels:
+    {{- include "grafana-dashboards.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: test
+      image: busybox:1.36
+      command: ["sh", "-c"]
+      args:
+        - |
+          set -e
+          {{- range $name := $enabled }}
+          test -s /dashboards/{{ $name }}.json || { echo "empty dashboard: {{ $name }}"; exit 1; }
+          {{- end }}
+          echo "all dashboards non-empty"
+      volumeMounts:
+        {{- range $name := $enabled }}
+        - name: {{ $name }}
+          mountPath: /dashboards/{{ $name }}.json
+          subPath: {{ $name }}.json
+        {{- end }}
+  volumes:
+    {{- range $name := $enabled }}
+    - name: {{ $name }}
+      configMap:
+        name: {{ include "grafana-dashboards.fullname" $root }}-{{ $name }}
+    {{- end }}
+{{- end }}

@@ -1,37 +1,80 @@
 # Helm charts
 
 Helm charts for the duynhlab microservices platform.
+Published to GHCR (OCI) and [GitHub Pages](https://duynhlab.github.io/helm-charts).
 
 ## Charts
 
-| Chart | Description |
-|-------|-------------|
-| [`mop`](charts/mop) | Generic chart for the Go microservices (Microservices Observability Platform) — single Deployment, one multi-port Service (http + optional grpc), golang-migrate init container, Sloth SLO. |
+| Chart | Version | Description |
+|-------|---------|-------------|
+| [`mop`](charts/mop) | 0.16.1 | Generic chart for Go microservices — Deployment, multi-port Service (HTTP + optional gRPC), golang-migrate, Sloth SLO. |
+| [`grafana-dashboards`](charts/grafana-dashboards) | 0.1.1 | Grafana dashboards as ConfigMaps for sidecar auto-provisioning. |
 
-## Install
+See each chart's README for configuration details.
 
-**OCI (GHCR):**
+## Installation
 
-```bash
-helm install <release> oci://ghcr.io/duynhlab/helm-charts/mop --version 0.12.0 \
-  --set name=<svc> --set image.repository=ghcr.io/duynhlab/<svc>-service/<svc>
+### List available versions (OCI)
+
+```console
+crane ls ghcr.io/duynhlab/helm-charts/mop
+crane ls ghcr.io/duynhlab/helm-charts/grafana-dashboards
 ```
 
-**Helm repo (GitHub Pages):**
+### OCI (GHCR)
 
-```bash
+```console
+# mop
+helm install <release> oci://ghcr.io/duynhlab/helm-charts/mop --version 0.16.1 \
+  --set name=<svc> --set image.repository=ghcr.io/duynhlab/<svc>-service/<svc>
+
+# grafana-dashboards
+helm install grafana-dashboards oci://ghcr.io/duynhlab/helm-charts/grafana-dashboards --version 0.1.1
+```
+
+### Helm repo (GitHub Pages)
+
+```console
 helm repo add duynhlab https://duynhlab.github.io/helm-charts
 helm repo update
-helm install <release> duynhlab/mop --version 0.12.0 --set name=<svc> ...
+helm install <release> duynhlab/mop --version 0.16.1 --set name=<svc> ...
+helm install grafana-dashboards duynhlab/grafana-dashboards --version 0.1.1
+```
+
+### Install from local chart
+
+```console
+helm install <release> ./charts/mop --set name=<svc> ...
+helm install grafana-dashboards ./charts/grafana-dashboards
+```
+
+## Upgrade
+
+```console
+helm upgrade <release> oci://ghcr.io/duynhlab/helm-charts/<chart>
+```
+
+## Uninstall
+
+```console
+helm uninstall <release>
 ```
 
 ## Develop
 
+Prerequisites for local e2e: `kind`, `kubectl`, `helm`, `helmfile`, `docker`.
+
 ```bash
-make lint       # helm lint (gRPC on/off)
-make template   # render with gRPC enabled
-make e2e        # KinD: install + assert Services + helm test + teardown
+# helmfile (one-time)
+go install github.com/helmfile/helmfile/v2/cmd/helmfile@latest
 ```
 
-CI: `lint.yml` (helm lint/template on PR), `e2e.yml` (chart-testing `lint-and-install`
-on a KinD cluster), `release.yml` (publishes to GitHub Pages + `oci://ghcr.io/duynhlab/helm-charts` on merge to `main`).
+```bash
+make help       # list targets
+make lint-all   # lint + template every chart (like CI)
+make lint       # helm lint $(CHART): default + gRPC+SLO
+make template   # render mop with gRPC enabled
+make docs       # regenerate chart READMEs (helm-docs)
+make e2e        # KinD: helmfile sync (mop + worker + grafana-dashboards), assert, test, teardown
+make e2e-sync   # helmfile sync only (existing cluster)
+```

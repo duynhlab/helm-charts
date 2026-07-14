@@ -1,0 +1,24 @@
+apiVersion: v2
+name: grafana-dashboards
+description: |
+  Helm chart that deploys Grafana dashboards as Kubernetes ConfigMaps.
+  Works with Grafana sidecar to automatically provision dashboards.
+  Supports per-dashboard folder, labels, and annotations configuration.
+type: application
+deprecated: false
+version: 0.1.1
+appVersion: "1.0.0"
+keywords:
+  - observability
+  - grafana
+  - dashboard
+  - monitoring
+  - kubernetes
+  - configmap
+  - sidecar
+maintainers:
+  - name: duynhlab
+    url: https://github.com/duynhlab
+home: https://github.com/duynhlab/helm-charts
+sources:
+  - https://github.com/duynhlab/helm-charts
