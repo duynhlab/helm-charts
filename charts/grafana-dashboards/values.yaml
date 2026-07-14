@@ -1,0 +1,30 @@
+# -- Grafana sidecar configuration for dashboard discovery
+sidecar:
+  # -- (map) Labels for Grafana sidecar to discover dashboards
+  labels:
+    grafana_dashboard: "1"
+  # -- (string) Annotation key for specifying dashboard folder
+  folderAnnotation: grafana_folder
+
+# -- Dashboard configurations
+dashboards:
+  temporal:
+    # -- (bool) Enable or disable this dashboard
+    enabled: true
+    # -- (string) Dashboard JSON file path under dashboards/
+    file: temporal/temporal.json
+    # -- (string) Grafana folder name (empty = root folder)
+    folder: "Temporal"
+    # -- (map) Additional labels for this dashboard ConfigMap
+    labels: {}
+    # -- (map) Additional annotations for this dashboard ConfigMap
+    annotations:
+      grafana-dashboards/metrics-source: prometheus
+
+  microservices-otel:
+    enabled: true
+    file: microservices/microservices-dashboard-otel.json
+    folder: "Microservices"
+    labels: {}
+    annotations:
+      grafana-dashboards/metrics-source: otel

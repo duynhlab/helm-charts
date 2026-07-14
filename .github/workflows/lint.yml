@@ -55,4 +55,4 @@ jobs:
         run: helm template test charts/mop/ --set name=test --set slo.enabled=true --namespace test
 
       - name: Template dry-run mop (gRPC enabled)
-        run: helm template test charts/mop/ --set name=test --set grpc.enabled=true --namespace test
+        run: helm template test charts/mop/ --set name=test --set service.grpc.enabled=true --namespace test

@@ -1,0 +1,24 @@
+helmDefaults:
+  wait: true
+  timeout: 180
+  createNamespace: true
+
+releases:
+  - name: mop-e2e
+    namespace: mop-e2e
+    chart: ../../charts/mop
+    values:
+      - ../../charts/mop/ci/grpc-values.yaml
+
+  - name: mop-e2e-worker
+    namespace: mop-e2e
+    chart: ../../charts/mop
+    needs:
+      - mop-e2e/mop-e2e
+    values:
+      - ../../charts/mop/ci/grpc-values.yaml
+      - values/mop-worker.yaml
+
+  - name: grafana-dashboards-e2e
+    namespace: grafana-e2e
+    chart: ../../charts/grafana-dashboards
