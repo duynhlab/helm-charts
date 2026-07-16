@@ -1,6 +1,6 @@
 # grafana-dashboards
 
-![Version: 0.1.1](https://img.shields.io/badge/Version-0.1.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 0.2.0](https://img.shields.io/badge/Version-0.2.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 Helm chart that deploys Grafana dashboards as Kubernetes ConfigMaps.
 Works with Grafana sidecar to automatically provision dashboards.
@@ -55,7 +55,7 @@ helm install grafana-dashboards oci://ghcr.io/duynhlab/helm-charts/grafana-dashb
 Install a specific version:
 
 ```console
-helm install grafana-dashboards oci://ghcr.io/duynhlab/helm-charts/grafana-dashboards --version 0.1.1
+helm install grafana-dashboards oci://ghcr.io/duynhlab/helm-charts/grafana-dashboards --version 0.2.0
 ```
 
 ### Helm repo (GitHub Pages)
@@ -63,13 +63,13 @@ helm install grafana-dashboards oci://ghcr.io/duynhlab/helm-charts/grafana-dashb
 ```console
 helm repo add duynhlab https://duynhlab.github.io/helm-charts
 helm repo update
-helm install grafana-dashboards duynhlab/grafana-dashboards --version 0.1.1
+helm install grafana-dashboards duynhlab/grafana-dashboards --version 0.2.0
 ```
 
 ### Install from local chart
 
 ```console
-helm pull oci://ghcr.io/duynhlab/helm-charts/grafana-dashboards --untar --version 0.1.1
+helm pull oci://ghcr.io/duynhlab/helm-charts/grafana-dashboards --untar --version 0.2.0
 helm install grafana-dashboards ./grafana-dashboards
 ```
 
@@ -111,7 +111,7 @@ helm uninstall grafana-dashboards
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| dashboards | object | `{"microservices-otel":{"annotations":{"grafana-dashboards/metrics-source":"otel"},"enabled":true,"file":"microservices/microservices-dashboard-otel.json","folder":"Microservices","labels":{}},"temporal":{"annotations":{"grafana-dashboards/metrics-source":"prometheus"},"enabled":true,"file":"temporal/temporal.json","folder":"Temporal","labels":{}}}` | Dashboard configurations |
+| dashboards | object | `{"business-otel":{"annotations":{"grafana-dashboards/metrics-source":"otel"},"enabled":true,"file":"microservices/business-otel.json","folder":"Microservices","labels":{}},"microservices-otel":{"annotations":{"grafana-dashboards/metrics-source":"otel"},"enabled":true,"file":"microservices/microservices-dashboard-otel.json","folder":"Microservices","labels":{}},"temporal":{"annotations":{"grafana-dashboards/metrics-source":"prometheus"},"enabled":true,"file":"temporal/temporal.json","folder":"Temporal","labels":{}}}` | Dashboard configurations |
 | dashboards.temporal.annotations | map | `{"grafana-dashboards/metrics-source":"prometheus"}` | Additional annotations for this dashboard ConfigMap |
 | dashboards.temporal.enabled | bool | `true` | Enable or disable this dashboard |
 | dashboards.temporal.file | string | `"temporal/temporal.json"` | Dashboard JSON file path under dashboards/ |

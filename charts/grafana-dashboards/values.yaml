@@ -28,3 +28,11 @@ dashboards:
     labels: {}
     annotations:
       grafana-dashboards/metrics-source: otel
+
+  business-otel:
+    enabled: true
+    file: microservices/business-otel.json
+    folder: "Microservices"
+    labels: {}
+    annotations:
+      grafana-dashboards/metrics-source: otel
