@@ -192,3 +192,16 @@ migrations:
   # envFrom:
   #   configMapRef: "migration-config"
   #   secretRef: "db-secret"  # Will be used for DB_PASSWORD
+
+# Database credentials as a mounted file (RFC-0008 / ADR-025 pattern A).
+# When enabled, the basic-auth Secret `secretName` is mounted as a DIRECTORY at
+# `mountPath` (never subPath, so kubelet refreshes it on rotation) and the app is
+# told `DB_PASSWORD_FILE=<mountPath>/<passwordFile>`. The app (pkg/dbx
+# WithPasswordFile) then reads the password per new connection, so a rotated
+# password is picked up without a pod restart. Default off => env-based password
+# (secretKeyRef) is unchanged and no volume is rendered.
+dbCredentials:
+  enabled: false
+  secretName: ""          # kubernetes.io/basic-auth Secret (same one used for DB_PASSWORD)
+  mountPath: /etc/db/secret
+  passwordFile: password  # => DB_PASSWORD_FILE = <mountPath>/<passwordFile>

@@ -84,9 +84,17 @@ spec:
           {{- if .Values.args }}
           args: {{- toYaml .Values.args | nindent 12 }}
           {{- end }}
-          {{- if .Values.env }}
+          {{- if or .Values.env .Values.dbCredentials.enabled }}
           env:
-            {{- toYaml .Values.env | nindent 12 }}
+            {{- with .Values.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+            {{- if .Values.dbCredentials.enabled }}
+            {{- /* Pattern A (ADR-025): password read from a mounted file per
+                   connection via pkg/dbx WithPasswordFile, not from env. */}}
+            - name: DB_PASSWORD_FILE
+              value: {{ printf "%s/%s" .Values.dbCredentials.mountPath .Values.dbCredentials.passwordFile | quote }}
+            {{- end }}
           {{- end }}
           ports:
             - name: http
@@ -131,3 +139,17 @@ spec:
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.dbCredentials.enabled }}
+          volumeMounts:
+            - name: db-credentials
+              mountPath: {{ .Values.dbCredentials.mountPath | quote }}
+              readOnly: true
+          {{- end }}
+      {{- if .Values.dbCredentials.enabled }}
+      {{- /* Mount the basic-auth Secret as a directory (never subPath, so kubelet
+             refreshes it on rotation) for pattern-A file-based credentials. */}}
+      volumes:
+        - name: db-credentials
+          secret:
+            secretName: {{ .Values.dbCredentials.secretName | quote }}
+      {{- end }}
