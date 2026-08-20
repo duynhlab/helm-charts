@@ -9,6 +9,7 @@ Published to GHCR (OCI) and [GitHub Pages](https://duynhlab.github.io/helm-chart
 |-------|---------|-------------|
 | [`mop`](charts/mop) | 0.17.1 | Generic chart for Go microservices — Deployment, multi-port Service (HTTP + optional gRPC), golang-migrate, Sloth SLO. |
 | [`grafana-dashboards`](charts/grafana-dashboards) | 0.2.2 | Grafana dashboards as ConfigMaps for sidecar auto-provisioning. |
+| [`duynh`](charts/duynh) | 0.2.1 | Stateless microservices on Amazon EKS — Deployment, Service, HPA, PDB, ServiceAccount, Envoy Gateway HTTPRoute, Sloth SLO. |
 
 See each chart's README for configuration details.
 
@@ -19,6 +20,7 @@ See each chart's README for configuration details.
 ```console
 crane ls ghcr.io/duynhlab/helm-charts/mop
 crane ls ghcr.io/duynhlab/helm-charts/grafana-dashboards
+crane ls ghcr.io/duynhlab/helm-charts/duynh
 ```
 
 ### OCI (GHCR)
@@ -30,6 +32,10 @@ helm install <release> oci://ghcr.io/duynhlab/helm-charts/mop --version 0.17.1 \
 
 # grafana-dashboards
 helm install grafana-dashboards oci://ghcr.io/duynhlab/helm-charts/grafana-dashboards --version 0.2.2
+
+# duynh
+helm install <release> oci://ghcr.io/duynhlab/helm-charts/duynh --version 0.2.1 \
+  --set image.repository=<image>
 ```
 
 ### Helm repo (GitHub Pages)
@@ -39,6 +45,7 @@ helm repo add duynhlab https://duynhlab.github.io/helm-charts
 helm repo update
 helm install <release> duynhlab/mop --version 0.17.1 --set name=<svc> ...
 helm install grafana-dashboards duynhlab/grafana-dashboards --version 0.2.2
+helm install <release> duynhlab/duynh --version 0.2.1 --set image.repository=<image>
 ```
 
 ### Install from local chart
@@ -46,6 +53,7 @@ helm install grafana-dashboards duynhlab/grafana-dashboards --version 0.2.2
 ```console
 helm install <release> ./charts/mop --set name=<svc> ...
 helm install grafana-dashboards ./charts/grafana-dashboards
+helm install <release> ./charts/duynh --set image.repository=<image>
 ```
 
 ## Upgrade

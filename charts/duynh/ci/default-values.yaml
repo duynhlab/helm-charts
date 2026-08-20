@@ -1,0 +1,41 @@
+# chart-testing (ct lint-and-install) + local KinD e2e values.
+# duynh ships sane defaults (nginx, single HTTP port) so the chart installs
+# with no Gateway API / Sloth CRD dependencies. This file keeps those defaults
+# explicit so CI stays readable.
+replicaCount: 1
+
+image:
+  repository: nginx
+  tag: "1.27"
+  pullPolicy: IfNotPresent
+
+containerPort: 80
+
+service:
+  type: ClusterIP
+  port: 80
+
+# Probes use the named port "http" which resolves to containerPort above.
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+  periodSeconds: 10
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+  periodSeconds: 5
+  failureThreshold: 2
+
+# Disable optional resources that need external CRDs or Metrics Server.
+autoscaling:
+  enabled: false
+pdb:
+  enabled: false
+httpRoute:
+  enabled: false
+sloth:
+  enabled: false

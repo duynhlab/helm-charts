@@ -1,0 +1,17 @@
+{{- if .Values.pdb.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "duynh.fullname" . }}
+  labels:
+    {{- include "duynh.labels" . | nindent 4 }}
+spec:
+  {{- if ne .Values.pdb.minAvailable nil }}
+  minAvailable: {{ .Values.pdb.minAvailable }}
+  {{- else }}
+  maxUnavailable: {{ .Values.pdb.maxUnavailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "duynh.selectorLabels" . | nindent 6 }}
+{{- end }}

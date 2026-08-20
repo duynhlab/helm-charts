@@ -1,0 +1,125 @@
+nameOverride: orders-api
+fullnameOverride: orders-api
+
+image:
+  repository: 123456789012.dkr.ecr.ap-southeast-1.amazonaws.com/orders-api
+  tag: "1.0.0"
+
+containerPort: 8080
+
+service:
+  port: 80
+
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/orders-api
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    memory: 512Mi
+
+startupProbe:
+  httpGet:
+    path: /startupz
+    port: http
+  periodSeconds: 5
+  failureThreshold: 30
+
+livenessProbe:
+  httpGet:
+    path: /livez
+    port: http
+  periodSeconds: 10
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: http
+  periodSeconds: 5
+  failureThreshold: 2
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: ["ALL"]
+  runAsNonRoot: true
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 60
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+
+pdb:
+  enabled: true
+  maxUnavailable: 1
+
+httpRoute:
+  enabled: true
+  parentRefs:
+    - name: public-gateway
+      namespace: envoy-gateway-system
+      sectionName: https
+  hostnames:
+    - orders.example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /orders
+      timeouts:
+        request: 30s
+        backendRequest: 5s
+
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: orders-api
+        app.kubernetes.io/instance: orders-api
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: orders-api
+        app.kubernetes.io/instance: orders-api
+
+# Replace these PromQL metric names and labels with the metrics exposed by the service.
+sloth:
+  enabled: true
+  service: orders-api
+  labels:
+    owner: platform
+    tier: "1"
+  slos:
+    - name: requests-availability
+      objective: 99.9
+      description: Successful HTTP request ratio for orders-api.
+      sli:
+        events:
+          errorQuery: >-
+            sum(rate(http_request_duration_seconds_count{job="orders-api",code=~"(5..|429)"}[{{.window}}]))
+          totalQuery: >-
+            sum(rate(http_request_duration_seconds_count{job="orders-api"}[{{.window}}]))
+      alerting:
+        name: OrdersApiHighErrorRate
+        labels:
+          category: availability
+        annotations:
+          summary: orders-api is consuming its availability error budget
+        pageAlert:
+          labels:
+            severity: critical
+        ticketAlert:
+          labels:
+            severity: warning

@@ -1,0 +1,25 @@
+suite: pod disruption budget
+templates:
+  - pdb.yaml
+release:
+  name: test
+  namespace: apps
+tests:
+  - it: is absent by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: limits voluntary disruption when enabled
+    set:
+      pdb.enabled: true
+      pdb.maxUnavailable: 1
+    asserts:
+      - isKind:
+          of: PodDisruptionBudget
+      - equal:
+          path: spec.maxUnavailable
+          value: 1
+      - equal:
+          path: spec.selector.matchLabels["app.kubernetes.io/instance"]
+          value: test

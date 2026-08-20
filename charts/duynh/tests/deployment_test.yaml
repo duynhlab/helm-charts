@@ -1,0 +1,44 @@
+suite: deployment
+templates:
+  - deployment.yaml
+release:
+  name: test
+  namespace: apps
+tests:
+  - it: renders a minimal deployment
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.replicas
+          value: 2
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: nginx:1.0.0
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 80
+
+  - it: omits replicas when autoscaling is enabled
+    set:
+      autoscaling.enabled: true
+    asserts:
+      - isNull:
+          path: spec.replicas
+
+  - it: renders production overrides
+    values:
+      - ../examples/values-orders.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: orders-api
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: 123456789012.dkr.ecr.ap-southeast-1.amazonaws.com/orders-api:1.0.0
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.path
+          value: /startupz
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints[0].topologyKey
+          value: topology.kubernetes.io/zone
