@@ -16,7 +16,7 @@ The chart deliberately does not create a Gateway, GatewayClass, secrets, RBAC, m
 
 ## Requirements
 
-- Kubernetes 1.30 or newer; CI renders against Kubernetes 1.34
+- Kubernetes 1.24+ (CI templates against the default Helm version)
 - Helm 3.21.4 or Helm 4.2.4
 - Metrics Server when HPA is enabled
 - Gateway API CRDs and Envoy Gateway when HTTPRoute is enabled

@@ -4,4 +4,3 @@ description: A reusable Helm chart for stateless microservices on Amazon EKS
 type: application
 version: 0.2.1
 appVersion: "1.0.0"
-kubeVersion: ">=1.30.0-0"
