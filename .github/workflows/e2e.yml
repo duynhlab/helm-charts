@@ -1,5 +1,5 @@
 name: E2E (KinD)
-run-name: 🧪 E2E (KinD)
+run-name: 🧪 E2E (KinD) — K8s ${{ matrix.k8s-version }}
 
 on:
   pull_request:
@@ -9,6 +9,10 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s-version: [v1.34.8, v1.35.5]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -33,9 +37,12 @@ jobs:
           changed=$(ct list-changed --config .github/configs/ct.yaml)
           if [ -n "$changed" ]; then echo "changed=true" >> "$GITHUB_OUTPUT"; fi
 
-      - name: Create KinD cluster
+      - name: Create KinD cluster (${{ matrix.k8s-version }})
         if: steps.list-changed.outputs.changed == 'true'
         uses: helm/kind-action@v1
+        with:
+          version: v0.32.0
+          node_image: kindest/node:${{ matrix.k8s-version }}
 
       - name: Lint + install changed charts on KinD (+ helm test)
         if: steps.list-changed.outputs.changed == 'true'
