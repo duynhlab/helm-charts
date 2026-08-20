@@ -7,8 +7,8 @@ Published to GHCR (OCI) and [GitHub Pages](https://duynhlab.github.io/helm-chart
 
 | Chart | Version | Description |
 |-------|---------|-------------|
-| [`mop`](charts/mop) | 0.16.1 | Generic chart for Go microservices — Deployment, multi-port Service (HTTP + optional gRPC), golang-migrate, Sloth SLO. |
-| [`grafana-dashboards`](charts/grafana-dashboards) | 0.1.1 | Grafana dashboards as ConfigMaps for sidecar auto-provisioning. |
+| [`mop`](charts/mop) | 0.17.0 | Generic chart for Go microservices — Deployment, multi-port Service (HTTP + optional gRPC), golang-migrate, Sloth SLO. |
+| [`grafana-dashboards`](charts/grafana-dashboards) | 0.2.1 | Grafana dashboards as ConfigMaps for sidecar auto-provisioning. |
 
 See each chart's README for configuration details.
 
@@ -25,11 +25,11 @@ crane ls ghcr.io/duynhlab/helm-charts/grafana-dashboards
 
 ```console
 # mop
-helm install <release> oci://ghcr.io/duynhlab/helm-charts/mop --version 0.16.1 \
+helm install <release> oci://ghcr.io/duynhlab/helm-charts/mop --version 0.17.0 \
   --set name=<svc> --set image.repository=ghcr.io/duynhlab/<svc>-service/<svc>
 
 # grafana-dashboards
-helm install grafana-dashboards oci://ghcr.io/duynhlab/helm-charts/grafana-dashboards --version 0.1.1
+helm install grafana-dashboards oci://ghcr.io/duynhlab/helm-charts/grafana-dashboards --version 0.2.1
 ```
 
 ### Helm repo (GitHub Pages)
@@ -37,8 +37,8 @@ helm install grafana-dashboards oci://ghcr.io/duynhlab/helm-charts/grafana-dashb
 ```console
 helm repo add duynhlab https://duynhlab.github.io/helm-charts
 helm repo update
-helm install <release> duynhlab/mop --version 0.16.1 --set name=<svc> ...
-helm install grafana-dashboards duynhlab/grafana-dashboards --version 0.1.1
+helm install <release> duynhlab/mop --version 0.17.0 --set name=<svc> ...
+helm install grafana-dashboards duynhlab/grafana-dashboards --version 0.2.1
 ```
 
 ### Install from local chart
