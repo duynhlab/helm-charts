@@ -5,6 +5,8 @@ on:
   pull_request:
     paths:
       - 'charts/**'
+      - '.github/workflows/e2e.yml'
+      - '.github/configs/ct.yaml'
 
 jobs:
   e2e:
