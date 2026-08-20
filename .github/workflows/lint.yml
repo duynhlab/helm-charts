@@ -56,3 +56,10 @@ jobs:
 
       - name: Template dry-run mop (gRPC enabled)
         run: helm template test charts/mop/ --set name=test --set service.grpc.enabled=true --namespace test
+
+      - name: Template dry-run duynh (HTTPRoute + HPA + Sloth enabled)
+        run: helm template test charts/duynh/ --namespace test \
+          --values charts/duynh/examples/values-orders.yaml
+
+      - name: Template dry-run duynh (default values)
+        run: helm template test charts/duynh/ --namespace test

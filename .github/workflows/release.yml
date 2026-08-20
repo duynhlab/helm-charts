@@ -43,10 +43,19 @@ jobs:
 
       - name: Publish Charts to OCI
         run: |
+          set -euo pipefail
           for pkg in .cr-release-packages/*; do
-            echo "${pkg}"
-            if [ -z "${pkg:-}" ]; then
-              break
+            [ -e "$pkg" ] || continue
+            name=$(basename "$pkg" .tgz)       # e.g. duynh-0.2.1
+            chart="${name%-*}"                  # e.g. duynh
+            version="${name##*-}"               # e.g. 0.2.1
+
+            # Skip if this version already exists in GHCR.
+            if helm show chart "oci://ghcr.io/duynhlab/helm-charts/${chart}" --version "${version}" >/dev/null 2>&1; then
+              echo "SKIP ${chart}-${version} (already published)"
+              continue
             fi
+
+            echo "PUSH ${pkg}"
             helm push "${pkg}" oci://ghcr.io/duynhlab/helm-charts
           done
