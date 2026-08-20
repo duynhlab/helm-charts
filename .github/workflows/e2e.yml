@@ -1,5 +1,5 @@
 name: E2E (KinD)
-run-name: 🧪 E2E (KinD) — K8s ${{ matrix.k8s-version }}
+run-name: 🧪 E2E (KinD)
 
 on:
   pull_request:
