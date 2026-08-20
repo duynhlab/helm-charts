@@ -1,6 +1,6 @@
 # grafana-dashboards
 
-![Version: 0.2.1](https://img.shields.io/badge/Version-0.2.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 0.2.2](https://img.shields.io/badge/Version-0.2.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 Helm chart that deploys Grafana dashboards as Kubernetes ConfigMaps.
 Works with Grafana sidecar to automatically provision dashboards.
@@ -27,6 +27,7 @@ sidecar:
 |-----------|----------------|------------------|-------------|
 | `temporal` | Temporal | Prometheus / VictoriaMetrics | Temporal SDK workflow and activity RED metrics |
 | `microservices-otel` | Microservices | OpenTelemetry | HTTP/gRPC RED, Go runtime metrics (OTel semconv) |
+| `business-otel` | Microservices | OpenTelemetry | Business-level metrics (OTel semconv) |
 
 ## Installation
 
@@ -55,7 +56,7 @@ helm install grafana-dashboards oci://ghcr.io/duynhlab/helm-charts/grafana-dashb
 Install a specific version:
 
 ```console
-helm install grafana-dashboards oci://ghcr.io/duynhlab/helm-charts/grafana-dashboards --version 0.2.1
+helm install grafana-dashboards oci://ghcr.io/duynhlab/helm-charts/grafana-dashboards --version 0.2.2
 ```
 
 ### Helm repo (GitHub Pages)
@@ -63,13 +64,13 @@ helm install grafana-dashboards oci://ghcr.io/duynhlab/helm-charts/grafana-dashb
 ```console
 helm repo add duynhlab https://duynhlab.github.io/helm-charts
 helm repo update
-helm install grafana-dashboards duynhlab/grafana-dashboards --version 0.2.1
+helm install grafana-dashboards duynhlab/grafana-dashboards --version 0.2.2
 ```
 
 ### Install from local chart
 
 ```console
-helm pull oci://ghcr.io/duynhlab/helm-charts/grafana-dashboards --untar --version 0.2.1
+helm pull oci://ghcr.io/duynhlab/helm-charts/grafana-dashboards --untar --version 0.2.2
 helm install grafana-dashboards ./grafana-dashboards
 ```
 
