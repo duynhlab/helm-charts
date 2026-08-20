@@ -26,14 +26,6 @@ jobs:
         with:
           version: v3.9.0
 
-      # Publish OCI charts to ghcr.io
-      - name: Generate charts
-        run: |
-          mkdir -p .cr-release-packages
-          for d in charts/* ; do
-            helm package "$d" --destination .cr-release-packages
-          done
-
       - name: Login to GitHub Container Registry
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 #v3
         with:
@@ -41,12 +33,25 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish Charts to OCI
+      # Package each chart, then push only versions that don't already exist
+      # on GHCR. helm push fails with 409 Conflict if the version is already
+      # published, so skip those to keep the workflow green on every push.
+      - name: Package and publish charts
+        env:
+          OCI_REGISTRY: ghcr.io/duynhlab/helm-charts
         run: |
-          for pkg in .cr-release-packages/*; do
-            echo "${pkg}"
-            if [ -z "${pkg:-}" ]; then
-              break
+          set -euo pipefail
+          mkdir -p .cr-release-packages
+          for d in charts/*/; do
+            chart_name=$(basename "$d")
+            version=$(helm show chart "$d" | awk '$1 == "version:" { print $2 }')
+            echo "== ${chart_name} ${version} =="
+            # Check if this version already exists in the registry.
+            if helm show chart "oci://${OCI_REGISTRY}/${chart_name}" --version "${version}" >/dev/null 2>&1; then
+              echo "  SKIP: ${chart_name}-${version} already published"
+              continue
             fi
-            helm push "${pkg}" oci://ghcr.io/duynhlab/helm-charts
+            helm package "$d" --destination .cr-release-packages
+            echo "  PUSH: ${chart_name}-${version}"
+            helm push ".cr-release-packages/${chart_name}-${version}.tgz" "oci://${OCI_REGISTRY}"
           done
