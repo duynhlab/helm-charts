@@ -1,0 +1,23 @@
+suite: service
+templates:
+  - service.yaml
+release:
+  name: test
+  namespace: apps
+tests:
+  - it: exposes the named HTTP container port
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - equal:
+          path: spec.ports[0].port
+          value: 80
+      - equal:
+          path: spec.ports[0].targetPort
+          value: http
+      - equal:
+          path: spec.selector["app.kubernetes.io/instance"]
+          value: test

@@ -1,0 +1,39 @@
+suite: Sloth service level
+templates:
+  - sloth.yaml
+release:
+  name: orders-api
+  namespace: apps
+tests:
+  - it: is absent by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders a PrometheusServiceLevel from the example
+    values:
+      - ../examples/values-orders.yaml
+    asserts:
+      - isKind:
+          of: PrometheusServiceLevel
+      - equal:
+          path: apiVersion
+          value: sloth.slok.dev/v1
+      - equal:
+          path: metadata.name
+          value: orders-api
+      - equal:
+          path: spec.service
+          value: orders-api
+      - equal:
+          path: spec.labels.owner
+          value: platform
+      - equal:
+          path: spec.slos[0].name
+          value: requests-availability
+      - equal:
+          path: spec.slos[0].objective
+          value: 99.9
+      - equal:
+          path: spec.slos[0].alerting.pageAlert.labels.severity
+          value: critical

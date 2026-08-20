@@ -17,13 +17,22 @@ jobs:
       # helm-unittest renders templates and asserts on the output — no cluster
       # needed. Pinned by digest (helmunittest/helm-unittest:latest @ 2026-06)
       # for reproducible runs; the image bundles helm + the plugin.
+      # Loops over every chart under charts/ so new charts are picked up
+      # automatically. JUnit reports are merged into a single junit.xml.
       - name: Run helm unit tests
         run: |
-          docker run --rm \
-            --user "$(id -u):$(id -g)" -e HOME=/tmp \
-            -v "${{ github.workspace }}":/apps \
-            helmunittest/helm-unittest@sha256:4684b7cf1e1a20ce3ff2cbfcceda36566d862d6024fa23684955d10ef6d51ab1 \
-            --strict -t JUnit -o junit.xml charts/mop
+          set -e
+          mkdir -p test-results
+          for d in charts/*/; do
+            name=$(basename "$d")
+            docker run --rm \
+              --user "$(id -u):$(id -g)" -e HOME=/tmp \
+              -v "${{ github.workspace }}":/apps \
+              helmunittest/helm-unittest@sha256:4684b7cf1e1a20ce3ff2cbfcceda36566d862d6024fa23684955d10ef6d51ab1 \
+              --strict -t JUnit -o "test-results/junit-${name}.xml" "$d"
+          done
+          # Merge per-chart JUnit reports into one for the publisher.
+          cat test-results/junit-*.xml > junit.xml
 
       - name: Publish test results
         uses: mikepenz/action-junit-report@v5

@@ -1,0 +1,39 @@
+suite: envoy gateway HTTPRoute
+templates:
+  - httproute.yaml
+release:
+  name: orders-api
+  namespace: apps
+tests:
+  - it: is absent by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: attaches the service to a shared gateway
+    values:
+      - ../examples/values-orders.yaml
+    asserts:
+      - isKind:
+          of: HTTPRoute
+      - equal:
+          path: apiVersion
+          value: gateway.networking.k8s.io/v1
+      - equal:
+          path: spec.parentRefs[0].name
+          value: public-gateway
+      - equal:
+          path: spec.parentRefs[0].namespace
+          value: envoy-gateway-system
+      - equal:
+          path: spec.hostnames[0]
+          value: orders.example.com
+      - equal:
+          path: spec.rules[0].matches[0].path.value
+          value: /orders
+      - equal:
+          path: spec.rules[0].timeouts.backendRequest
+          value: 5s
+      - equal:
+          path: spec.rules[0].backendRefs[0].name
+          value: orders-api

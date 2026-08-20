@@ -1,0 +1,22 @@
+{{- if .Values.sloth.enabled }}
+{{- $service := required "sloth.service is required when sloth.enabled=true" .Values.sloth.service }}
+{{- $slos := required "sloth.slos must contain at least one SLO when sloth.enabled=true" .Values.sloth.slos }}
+apiVersion: sloth.slok.dev/v1
+kind: PrometheusServiceLevel
+metadata:
+  name: {{ include "duynh.fullname" . }}
+  labels:
+    {{- include "duynh.labels" . | nindent 4 }}
+  {{- with .Values.sloth.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  service: {{ $service | quote }}
+  {{- with .Values.sloth.labels }}
+  labels:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  slos:
+    {{- toYaml $slos | nindent 4 }}
+{{- end }}

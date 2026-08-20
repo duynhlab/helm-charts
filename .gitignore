@@ -4,3 +4,6 @@
 
 # helm-unittest JUnit output
 junit*.xml
+
+# macOS
+.DS_Store
