@@ -6,6 +6,7 @@ on:
   pull_request:
     paths:
       - 'charts/**'
+      - '.github/workflows/lint.yml'
 
 jobs:
   lint:
@@ -56,3 +57,21 @@ jobs:
 
       - name: Template dry-run mop (gRPC enabled)
         run: helm template test charts/mop/ --set name=test --set service.grpc.enabled=true --namespace test
+
+      - name: Template dry-run duynh (HTTPRoute + HPA + Sloth enabled)
+        run: helm template test charts/duynh/ --namespace test --set httpRoute.enabled=true --set httpRoute.parentRefs[0].name=public-gateway --set httpRoute.rules[0].matches[0].path.type=PathPrefix --set httpRoute.rules[0].matches[0].path.value=/ --set autoscaling.enabled=true --set sloth.enabled=true --set sloth.service=test --set sloth.slos[0].name=availability --set sloth.slos[0].objective=99.9
+
+      - name: Template dry-run duynh (all optional features disabled)
+        run: helm template test charts/duynh/ --namespace test
+
+      - name: Lint duynh chart (HTTPRoute enabled)
+        run: helm lint charts/duynh/ --set name=test --set httpRoute.enabled=true --set httpRoute.parentRefs[0].name=public-gateway --set httpRoute.rules[0].matches[0].path.type=PathPrefix --set httpRoute.rules[0].matches[0].path.value=/
+
+      - name: Lint duynh chart (HPA + PDB enabled)
+        run: helm lint charts/duynh/ --set name=test --set autoscaling.enabled=true --set pdb.enabled=true
+
+      - name: Lint duynh chart (Sloth enabled)
+        run: helm lint charts/duynh/ --set name=test --set sloth.enabled=true --set sloth.service=test --set sloth.slos[0].name=availability --set sloth.slos[0].objective=99.9
+
+      - name: Template dry-run duynh (examples/values-orders.yaml)
+        run: helm template test charts/duynh/ --namespace test -f charts/duynh/examples/values-orders.yaml
