@@ -1,6 +1,6 @@
 # mop
 
-![Version: 0.17.1](https://img.shields.io/badge/Version-0.17.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 0.17.2](https://img.shields.io/badge/Version-0.17.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 A generic Helm chart for deploying Go microservices (Microservices Observability Platform)
 
@@ -18,6 +18,10 @@ A generic Helm chart for deploying Go microservices (Microservices Observability
 | args | list | `[]` |  |
 | command | list | `[]` |  |
 | component | string | `"api"` |  |
+| dbCredentials.enabled | bool | `false` |  |
+| dbCredentials.mountPath | string | `"/etc/db/secret"` |  |
+| dbCredentials.passwordFile | string | `"password"` |  |
+| dbCredentials.secretName | string | `""` |  |
 | env | list | `[]` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `""` |  |
