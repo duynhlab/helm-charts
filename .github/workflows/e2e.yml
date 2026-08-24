@@ -46,6 +46,17 @@ jobs:
           version: v0.32.0
           node_image: kindest/node:${{ matrix.k8s-version }}
 
+      # charts/vm-rules renders VMRule objects, so the CRDs must exist before
+      # ct installs it. Server-side apply: the bundle is ~9MB, over the
+      # client-side last-applied-configuration annotation limit.
+      - name: Install VictoriaMetrics operator CRDs
+        if: steps.list-changed.outputs.changed == 'true'
+        env:
+          VM_OPERATOR_VERSION: v0.74.1
+        run: |
+          kubectl apply --server-side --force-conflicts -f "https://github.com/VictoriaMetrics/operator/releases/download/${VM_OPERATOR_VERSION}/crd.yaml"
+          kubectl wait --for condition=established --timeout=60s crd/vmrules.operator.victoriametrics.com
+
       - name: Lint + install changed charts on KinD (+ helm test)
         if: steps.list-changed.outputs.changed == 'true'
         run: ct lint-and-install --config .github/configs/ct.yaml

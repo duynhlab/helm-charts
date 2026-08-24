@@ -1,0 +1,56 @@
+# node-exporter. These alerts key off `instance` rather than `node`: `node` is only
+# guaranteed on kube-state-metrics / cadvisor series, while `instance` is always
+# present on node-exporter targets regardless of the scrape relabeling in use.
+groups:
+  - name: node-exporter.rules
+    rules:
+      - alert: NodeMDRaidSyncing
+        expr: node_md_blocks - node_md_blocks_synced > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: MD raid array is syncing
+          description: MD raid {{ $labels.device }} on {{ $labels.instance }} has {{ $value }} blocks left to sync.
+
+      - alert: NodeMDRaidNotActive
+        expr: node_md_state{state!~"active"} == 1
+        for: 5h
+        labels:
+          severity: warning
+        annotations:
+          summary: MD raid array is not active
+          description: MD raid {{ $labels.device }} on {{ $labels.instance }} is in {{ $labels.state }} state.
+
+      - alert: NodeUptimeTooLong
+        expr: node_time_seconds - node_boot_time_seconds > 6 * 30 * 24 * 60 * 60
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Node maintenance required
+          description: Node {{ $labels.instance }} has been up for {{ $value | humanizeDuration }} and needs maintenance.
+
+      # Low uptime AND the target was absent an hour ago -> this node is new.
+      - alert: NodeAdded
+        expr: >-
+          min by (instance) (node_time_seconds - node_boot_time_seconds) < 60 * 60 * 2
+          unless count(up{job="node-exporter"} offset 1h) by (instance)
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: New node added to the cluster
+          description: New node {{ $labels.instance }} appeared, uptime is {{ $value | humanizeDuration }}.
+
+      # Low uptime AND the target existed 6h ago -> this node rebooted.
+      - alert: NodeRebooted
+        expr: >-
+          min by (instance) (node_time_seconds - node_boot_time_seconds) < 60 * 60 * 2
+          and count(up{job="node-exporter"} offset 6h) by (instance)
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: Node has been restarted
+          description: Node {{ $labels.instance }} restarted, uptime is {{ $value | humanizeDuration }}.

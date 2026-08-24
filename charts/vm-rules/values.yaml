@@ -1,0 +1,60 @@
+nameOverride: ""
+fullnameOverride: ""
+
+# -- (map) Labels added to every VMRule so VMAlert's `ruleSelector` can discover
+# them. Leave empty when VMAlert uses `ruleSelector: {}` (selects everything).
+ruleSelectorLabels: {}
+  # app.kubernetes.io/part-of: victoria-metrics
+
+# -- (map) Remap the job names the bundled rules match on. Key = job name as
+# written in rules/*.yml, value = the job name your scrape config actually
+# produces. Leave empty when the defaults already match.
+# Find your real job names with:
+#   count by (job) (rest_client_requests_total)
+#   count by (job) (node_time_seconds)
+jobNames: {}
+  # kubelet: kubernetes-nodes
+  # node-exporter: prom-stack-prometheus-node-exporter
+
+# -- Rule groups. Each entry renders one VMRule from the matching file under `rules/`.
+rules:
+  certmanager:
+    # -- (bool) Enable or disable this rule group
+    enabled: true
+    # -- (string) Rule file path under rules/
+    file: certmanager.yml
+    # -- (map) Additional labels for this VMRule
+    labels: {}
+    # -- (map) Additional annotations for this VMRule
+    annotations: {}
+
+  fluxcd:
+    enabled: true
+    file: fluxcd.yml
+    labels: {}
+    annotations: {}
+
+  kubelet:
+    enabled: true
+    file: kubelet.yml
+    labels: {}
+    annotations: {}
+
+  kubernetes:
+    enabled: true
+    file: kubernetes.yml
+    labels: {}
+    annotations: {}
+
+  node-exporter:
+    enabled: true
+    file: node-exporter.yml
+    labels: {}
+    annotations: {}
+
+  # Not every cluster runs redis_exporter, so this group is opt-in.
+  redis:
+    enabled: false
+    file: redis.yml
+    labels: {}
+    annotations: {}

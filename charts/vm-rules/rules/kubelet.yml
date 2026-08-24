@@ -1,0 +1,33 @@
+# Kubelet health, seen from kube-state-metrics and the kubelet's own metrics.
+groups:
+  - name: kubelet.rules
+    rules:
+      - alert: NodeKubeletLostApi
+        expr: sum(increase(rest_client_requests_total{code="<error>",job="kubelet"}[3m])) without (method) > 5
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: Kubelet lost kube-apiserver
+          description: Kubelet {{ $labels.instance }} cannot reach kube-apiserver.
+
+      - alert: ManyNodesNotReady
+        expr: >-
+          count(kube_node_status_condition{condition="Ready",status="true"} == 0) > 1
+          and (count(kube_node_status_condition{condition="Ready",status="true"} == 0) /
+          count(kube_node_status_condition{condition="Ready",status="true"})) > 0.2
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Many Kubernetes nodes are not ready
+          description: "{{ $value }} Kubernetes nodes are not ready (more than 20% of the cluster)."
+
+      - alert: NodeKubeletLogSize
+        expr: sum(kubelet_container_log_filesystem_used_bytes) by (instance, namespace, pod) > 10 * 1024 * 1024 * 1024
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Kubelet container log size too large
+          description: Container logs for {{ $labels.namespace }}/{{ $labels.pod }} on {{ $labels.instance }} use {{ $value | humanize1024 }}B.

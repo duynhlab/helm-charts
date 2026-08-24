@@ -10,6 +10,7 @@ Published to GHCR (OCI) and [GitHub Pages](https://duynhlab.github.io/helm-chart
 | [`mop`](charts/mop) | 0.17.1 | Generic chart for Go microservices — Deployment, multi-port Service (HTTP + optional gRPC), golang-migrate, Sloth SLO. |
 | [`grafana-dashboards`](charts/grafana-dashboards) | 0.2.2 | Grafana dashboards as ConfigMaps for sidecar auto-provisioning. |
 | [`duynh`](charts/duynh) | 0.2.1 | Stateless microservices on Amazon EKS — Deployment, Service, HPA, PDB, ServiceAccount, Envoy Gateway HTTPRoute, Sloth SLO. |
+| [`vm-rules`](charts/vm-rules) | 0.1.0 | Static VictoriaMetrics alerting rules as VMRule objects — cert-manager, Flux, kubelet, Kubernetes workloads, node-exporter, Redis. |
 
 See each chart's README for configuration details.
 
@@ -21,6 +22,7 @@ See each chart's README for configuration details.
 crane ls ghcr.io/duynhlab/helm-charts/mop
 crane ls ghcr.io/duynhlab/helm-charts/grafana-dashboards
 crane ls ghcr.io/duynhlab/helm-charts/duynh
+crane ls ghcr.io/duynhlab/helm-charts/vm-rules
 ```
 
 ### OCI (GHCR)
@@ -36,6 +38,9 @@ helm install grafana-dashboards oci://ghcr.io/duynhlab/helm-charts/grafana-dashb
 # duynh
 helm install <release> oci://ghcr.io/duynhlab/helm-charts/duynh --version 0.2.1 \
   --set image.repository=<image>
+
+# vm-rules (needs the VictoriaMetrics operator CRDs)
+helm install vm-rules oci://ghcr.io/duynhlab/helm-charts/vm-rules --version 0.1.0 -n monitoring
 ```
 
 ### Helm repo (GitHub Pages)
@@ -46,6 +51,7 @@ helm repo update
 helm install <release> duynhlab/mop --version 0.17.1 --set name=<svc> ...
 helm install grafana-dashboards duynhlab/grafana-dashboards --version 0.2.2
 helm install <release> duynhlab/duynh --version 0.2.1 --set image.repository=<image>
+helm install vm-rules duynhlab/vm-rules --version 0.1.0 -n monitoring
 ```
 
 ### Install from local chart
@@ -54,6 +60,7 @@ helm install <release> duynhlab/duynh --version 0.2.1 --set image.repository=<im
 helm install <release> ./charts/mop --set name=<svc> ...
 helm install grafana-dashboards ./charts/grafana-dashboards
 helm install <release> ./charts/duynh --set image.repository=<image>
+helm install vm-rules ./charts/vm-rules -n monitoring
 ```
 
 ## Upgrade
@@ -83,6 +90,8 @@ make lint-all   # lint + template every chart (like CI)
 make lint       # helm lint $(CHART): default + gRPC+SLO
 make template   # render mop with gRPC enabled
 make docs       # regenerate chart READMEs (helm-docs)
-make e2e        # KinD: helmfile sync (mop + worker + grafana-dashboards), assert, test, teardown
+make check-rules       # promtool check charts/vm-rules/rules/*.yml
+make lint-vm-rules     # helm lint vm-rules: default + all rule groups
+make e2e        # KinD: VM CRDs + helmfile sync (mop + worker + grafana-dashboards + vm-rules), assert, test, teardown
 make e2e-sync   # helmfile sync only (existing cluster)
 ```

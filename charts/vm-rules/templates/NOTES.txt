@@ -1,0 +1,22 @@
+{{ include "vm-rules.fullname" . }} installed.
+
+VMRules created:
+{{- range $name, $rule := .Values.rules }}
+{{- if $rule.enabled }}
+  - {{ include "vm-rules.fullname" $ }}-{{ $name }}
+{{- end }}
+{{- end }}
+
+Verify the operator accepted them:
+
+  kubectl get vmrule -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
+  kubectl get vmrule -n {{ .Release.Namespace }} -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.updateStatus}{"\n"}{end}'
+
+Every VMRule should report updateStatus=operational. If they stay empty, VMAlert is
+not selecting them -- check its ruleSelector/ruleNamespaceSelector against these labels:
+
+  kubectl get vmalert -A -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.ruleSelector}{"\n"}{end}'
+{{- if not .Values.ruleSelectorLabels }}
+
+(ruleSelectorLabels is empty -- this only works when VMAlert uses `ruleSelector: {}`.)
+{{- end }}

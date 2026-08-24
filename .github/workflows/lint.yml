@@ -46,6 +46,17 @@ jobs:
           done
           exit $exit_code
 
+      # Catches malformed PromQL, invalid alert names and duplicate rules before
+      # they ever reach a cluster -- helm lint cannot see inside the rule files.
+      - name: Check rule files with promtool
+        run: docker run --rm -v "${{ github.workspace }}/charts/vm-rules/rules:/rules:ro" --entrypoint promtool prom/prometheus:v3.7.3 check rules /rules/certmanager.yml /rules/fluxcd.yml /rules/kubelet.yml /rules/kubernetes.yml /rules/node-exporter.yml /rules/redis.yml
+
+      - name: Template dry-run vm-rules (all rule groups enabled)
+        run: helm template test charts/vm-rules/ --namespace monitoring -f charts/vm-rules/ci/default-values.yaml
+
+      - name: Template dry-run vm-rules (job name remap)
+        run: helm template test charts/vm-rules/ --namespace monitoring --set jobNames.kubelet=kubernetes-nodes --set jobNames.node-exporter=prometheus-node-exporter
+
       - name: Lint mop chart (SLO enabled)
         run: helm lint charts/mop/ --set name=test --set slo.enabled=true
 

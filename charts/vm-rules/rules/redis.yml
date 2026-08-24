@@ -1,0 +1,85 @@
+# redis_exporter. Grouping uses `service` (added by VMServiceScrape endpoint
+# relabeling) so replica sets are compared per Redis instance, not per pod.
+groups:
+  - name: redis.rules
+    rules:
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Redis is down
+          description: Redis {{ $labels.namespace }}/{{ $labels.pod }} is not responding.
+
+      - alert: RedisMultiMaster
+        expr: count(redis_connected_slaves{role="master"}) by (namespace, service) > 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Redis cluster has more than one master
+          description: Redis multi-master detected in {{ $labels.namespace }}/{{ $labels.service }}.
+
+      - alert: RedisLostMaster
+        expr: redis_master_link_up{role="slave"} != 1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: Redis replica cannot reach its master
+          description: Redis replica {{ $labels.namespace }}/{{ $labels.pod }} lost its master link.
+
+      - alert: RedisReplicationBroken
+        expr: delta(redis_connected_slaves[5m]) < 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Redis replication broken, lost a replica
+          description: Redis {{ $labels.namespace }}/{{ $labels.pod }} lost a replica.
+
+      - alert: RedisClientConnections
+        expr: redis_config_maxclients - redis_connected_clients < 10
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: Redis has fewer than 10 free connections
+          description: Redis {{ $labels.namespace }}/{{ $labels.pod }} has {{ $value }} client slots left.
+
+      - alert: RedisRejectedConnections
+        expr: increase(redis_rejected_connections_total[2m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Redis rejected connections
+          description: Redis {{ $labels.namespace }}/{{ $labels.pod }} rejected {{ $value }} connections.
+
+      - alert: RedisMemoryFull
+        expr: (redis_memory_used_bytes > redis_memory_max_bytes * 0.9) and (redis_memory_max_bytes > 0)
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Redis memory is above 90% of maxmemory
+          description: Redis {{ $labels.namespace }}/{{ $labels.pod }} uses {{ $value | humanize1024 }}B.
+
+      - alert: RedisMissingBackup
+        expr: time() - redis_rdb_last_save_timestamp_seconds > 24 * 60 * 60
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Redis has not saved an RDB snapshot in 24h
+          description: Redis {{ $labels.namespace }}/{{ $labels.pod }} last saved {{ $value | humanizeDuration }} ago.
+
+      - alert: RedisExporterScrapeError
+        expr: redis_exporter_last_scrape_error == 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: redis_exporter cannot scrape Redis
+          description: redis_exporter {{ $labels.namespace }}/{{ $labels.pod }} fails to scrape its Redis target.
