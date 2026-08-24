@@ -1,0 +1,23 @@
+# cert-manager. Requires the cert-manager controller metrics endpoint to be scraped.
+groups:
+  - name: certmanager.rules
+    rules:
+      - alert: CertmanagerCertificateNotReady
+        expr: certmanager_certificate_ready_status{condition="False"} == 1
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: cert-manager Certificate is not ready
+          description: Certificate {{ $labels.namespace }}/{{ $labels.name }} has been not ready for 1h.
+
+      # Renewal normally happens at 2/3 of the lifetime; 21 days of remaining
+      # validity means renewal has already failed silently for a while.
+      - alert: CertmanagerCertificateExpirySoon
+        expr: certmanager_certificate_expiration_timestamp_seconds - time() < 21 * 24 * 60 * 60
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: cert-manager Certificate expires soon
+          description: Certificate {{ $labels.namespace }}/{{ $labels.name }} expires in {{ $value | humanizeDuration }}.

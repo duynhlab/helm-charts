@@ -1,0 +1,44 @@
+{{- range $name, $rule := .Values.rules }}
+{{- if $rule.enabled }}
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMRule
+metadata:
+  name: {{ include "vm-rules.fullname" $ }}-{{ $name }}
+  labels:
+    {{- include "vm-rules.labels" $ | nindent 4 }}
+    {{- with $.Values.ruleSelectorLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with $rule.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $rule.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- /*
+  .Files.Get returns the file verbatim and does NOT evaluate Go templates, so the
+  `{{ $labels.pod }}` / `{{ $value | humanizeDuration }}` expressions inside the rule
+  files reach VMAlert untouched. This is why the rules live in rules/*.yml rather
+  than in values.yaml. Each file carries its own top-level `groups:` key, which makes
+  it a valid standalone Prometheus rule file (checkable with `promtool check rules`)
+  and lets it drop straight in as the VMRule spec.
+*/}}
+{{- $body := $.Files.Get (printf "rules/%s" $rule.file) }}
+{{- /*
+  Two passes through a sentinel so a swap (kubelet -> node-exporter while
+  node-exporter -> something-else) cannot hit the same matcher twice. A single
+  pass would rewrite job="kubelet" to job="node-exporter", and the next
+  iteration of the loop would then rewrite that result again.
+*/}}
+{{- range $from, $to := $.Values.jobNames }}
+{{- $body = $body | replace (printf "job=%q" $from) (printf "job=@@%s@@" $from) }}
+{{- end }}
+{{- range $from, $to := $.Values.jobNames }}
+{{- $body = $body | replace (printf "job=@@%s@@" $from) (printf "job=%q" $to) }}
+{{- end }}
+spec:
+{{ $body | indent 2 }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,183 @@
+suite: vmrules
+templates:
+  - vmrules.yaml
+tests:
+  - it: renders one VMRule per enabled group, redis off by default
+    asserts:
+      - hasDocuments:
+          count: 5
+
+  - it: renders redis too when enabled
+    set:
+      rules.redis.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 6
+
+  - it: renders nothing when every group is disabled
+    set:
+      rules.certmanager.enabled: false
+      rules.fluxcd.enabled: false
+      rules.kubelet.enabled: false
+      rules.kubernetes.enabled: false
+      rules.node-exporter.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: uses the current VMRule API version and kind
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: VMRule
+      - isAPIVersion:
+          of: operator.victoriametrics.com/v1beta1
+
+  - it: names each VMRule after the release plus the group key
+    documentSelector:
+      path: metadata.name
+      value: RELEASE-NAME-vm-rules-kubernetes
+    asserts:
+      - isKind:
+          of: VMRule
+
+  # Files.Get + indent must yield structured YAML under spec, not an opaque string.
+  - it: embeds the rule file as a real group list
+    documentSelector:
+      path: metadata.name
+      value: RELEASE-NAME-vm-rules-kubernetes
+    asserts:
+      - equal:
+          path: spec.groups[0].name
+          value: kubernetes.rules
+      - lengthEqual:
+          path: spec.groups[0].rules
+          count: 5
+      - equal:
+          path: spec.groups[0].rules[0].alert
+          value: PodOOMKilled
+
+  # Prometheus templating must survive Helm untouched.
+  - it: keeps Go template expressions in annotations verbatim
+    documentSelector:
+      path: metadata.name
+      value: RELEASE-NAME-vm-rules-kubernetes
+    asserts:
+      - equal:
+          path: spec.groups[0].rules[0].annotations.description
+          value: Pod {{ $labels.namespace }}/{{ $labels.pod }} was OOM killed.
+
+  - it: applies ruleSelectorLabels to every VMRule
+    set:
+      ruleSelectorLabels:
+        app.kubernetes.io/part-of: victoria-metrics
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/part-of"]
+          value: victoria-metrics
+
+  - it: applies per-group labels and annotations
+    set:
+      rules.fluxcd.labels:
+        tier: platform
+      rules.fluxcd.annotations:
+        owner: sre
+    documentSelector:
+      path: metadata.name
+      value: RELEASE-NAME-vm-rules-fluxcd
+    asserts:
+      - equal:
+          path: metadata.labels.tier
+          value: platform
+      - equal:
+          path: metadata.annotations.owner
+          value: sre
+
+  - it: carries the common chart labels
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: vm-rules
+      - equal:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+          value: Helm
+
+  # --- job name remapping ---
+
+  - it: leaves job matchers untouched when jobNames is empty
+    documentSelector:
+      path: metadata.name
+      value: RELEASE-NAME-vm-rules-node-exporter
+    asserts:
+      - matchRegex:
+          path: spec.groups[0].rules[3].expr
+          pattern: 'job="node-exporter"'
+
+  - it: rewrites a job matcher to the configured name
+    set:
+      jobNames:
+        node-exporter: prom-stack-prometheus-node-exporter
+    documentSelector:
+      path: metadata.name
+      value: RELEASE-NAME-vm-rules-node-exporter
+    asserts:
+      - matchRegex:
+          path: spec.groups[0].rules[3].expr
+          pattern: 'job="prom-stack-prometheus-node-exporter"'
+      - notMatchRegex:
+          path: spec.groups[0].rules[3].expr
+          pattern: 'job="node-exporter"'
+
+  - it: rewrites several job names at once
+    set:
+      jobNames:
+        kubelet: kubernetes-nodes
+        node-exporter: prometheus-node-exporter
+    asserts:
+      - matchRegex:
+          path: spec.groups[0].rules[0].expr
+          pattern: 'job="kubernetes-nodes"'
+        documentSelector:
+          path: metadata.name
+          value: RELEASE-NAME-vm-rules-kubelet
+      - matchRegex:
+          path: spec.groups[0].rules[3].expr
+          pattern: 'job="prometheus-node-exporter"'
+        documentSelector:
+          path: metadata.name
+          value: RELEASE-NAME-vm-rules-node-exporter
+
+  # Guards the two-pass rewrite: a single pass would turn kubelet's matcher into
+  # node-exporter and then rewrite it again to foo.
+  - it: does not apply a swap twice
+    set:
+      jobNames:
+        kubelet: node-exporter
+        node-exporter: foo
+    asserts:
+      - matchRegex:
+          path: spec.groups[0].rules[0].expr
+          pattern: 'job="node-exporter"'
+        documentSelector:
+          path: metadata.name
+          value: RELEASE-NAME-vm-rules-kubelet
+      - matchRegex:
+          path: spec.groups[0].rules[3].expr
+          pattern: 'job="foo"'
+        documentSelector:
+          path: metadata.name
+          value: RELEASE-NAME-vm-rules-node-exporter
+
+  - it: never leaks the internal rewrite sentinel
+    set:
+      jobNames:
+        kubelet: x
+        node-exporter: y
+    documentSelector:
+      path: metadata.name
+      value: RELEASE-NAME-vm-rules-node-exporter
+    asserts:
+      - notMatchRegex:
+          path: spec.groups[0].rules[3].expr
+          pattern: '@@'

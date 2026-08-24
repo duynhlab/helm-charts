@@ -22,3 +22,9 @@ releases:
   - name: grafana-dashboards-e2e
     namespace: grafana-e2e
     chart: ../../charts/grafana-dashboards
+
+  - name: vm-rules-e2e
+    namespace: vm-rules-e2e
+    chart: ../../charts/vm-rules
+    values:
+      - ../../charts/vm-rules/ci/default-values.yaml

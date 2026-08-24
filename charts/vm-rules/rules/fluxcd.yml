@@ -1,0 +1,31 @@
+# Flux GitOps controllers (gotk = GitOps Toolkit).
+# Metrics come from the flux controllers' /metrics endpoints.
+groups:
+  - name: fluxcd.rules
+    rules:
+      - alert: FluxHelmReleaseFailure
+        expr: gotk_resource_info{ready="False", customresource_kind="HelmRelease"} > 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: Flux HelmRelease failure
+          description: HelmRelease {{ $labels.namespace }}/{{ $labels.name }} is not ready.
+
+      - alert: FluxKustomizationFailure
+        expr: gotk_resource_info{ready="False", customresource_kind="Kustomization"} > 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: Flux Kustomization failure
+          description: Kustomization {{ $labels.namespace }}/{{ $labels.name }} is not ready.
+
+      - alert: FluxSourceIssue
+        expr: gotk_resource_info{ready="False", customresource_kind=~"GitRepository|HelmRepository|Bucket|OCIRepository"} > 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: Flux source issue
+          description: Flux {{ $labels.customresource_kind }} {{ $labels.namespace }}/{{ $labels.name }} is not ready.

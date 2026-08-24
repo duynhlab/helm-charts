@@ -1,0 +1,6 @@
+# Exercise every rule group, including the opt-in ones, during ct lint-and-install.
+rules:
+  redis:
+    enabled: true
+ruleSelectorLabels:
+  app.kubernetes.io/part-of: victoria-metrics

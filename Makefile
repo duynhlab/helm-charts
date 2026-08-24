@@ -1,6 +1,8 @@
 CHART ?= charts/mop
+# promtool runs in a container; podman works as a drop-in for docker here.
+CONTAINER ?= docker
 
-.PHONY: lint lint-mop lint-duynh lint-all template template-mop template-duynh unittest e2e e2e-sync docs help
+.PHONY: lint lint-mop lint-duynh lint-vm-rules lint-all template template-mop template-duynh template-vm-rules check-rules unittest e2e e2e-sync docs help
 
 help: ## show available targets
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  %-16s %s\n", $$1, $$2}'
@@ -28,6 +30,16 @@ lint-duynh: ## helm lint charts/duynh: default + HTTPRoute+HPA+PDB+Sloth
 	helm lint charts/duynh --set name=test --set sloth.enabled=true \
 	  --set sloth.service=test --set sloth.slos[0].name=availability --set sloth.slos[0].objective=99.9
 
+lint-vm-rules: ## helm lint charts/vm-rules: default + all rule groups enabled
+	helm lint charts/vm-rules
+	helm lint charts/vm-rules -f charts/vm-rules/ci/default-values.yaml
+
+check-rules: ## promtool check charts/vm-rules/rules/*.yml (needs docker or podman)
+	$(CONTAINER) run --rm -v "$(PWD)/charts/vm-rules/rules:/rules:ro" \
+	  --entrypoint promtool prom/prometheus:v3.7.3 check rules \
+	  /rules/certmanager.yml /rules/fluxcd.yml /rules/kubelet.yml \
+	  /rules/kubernetes.yml /rules/node-exporter.yml /rules/redis.yml
+
 template: ## render the chart with gRPC enabled
 	helm template test $(CHART) --set name=test --set image.repository=ghcr.io/duynhlab/x --set service.grpc.enabled=true
 
@@ -44,10 +56,14 @@ template-duynh: ## render charts/duynh with HTTPRoute + HPA + Sloth
 	  --set sloth.service=test --set sloth.slos[0].name=availability --set sloth.slos[0].objective=99.9 \
 	  --namespace test
 
+template-vm-rules: ## render charts/vm-rules with every rule group enabled
+	helm template test charts/vm-rules --namespace monitoring \
+	  -f charts/vm-rules/ci/default-values.yaml
+
 unittest: ## run helm-unittest suites
 	helm unittest $(CHART) --strict
 
-e2e: ## KinD + helmfile sync/test (requires kind, kubectl, helm, helmfile, docker)
+e2e: ## KinD + VM CRDs + helmfile sync/test (requires kind, kubectl, helm, helmfile, docker)
 	./scripts/e2e-kind.sh
 
 e2e-sync: ## helmfile sync only (cluster must already exist)
