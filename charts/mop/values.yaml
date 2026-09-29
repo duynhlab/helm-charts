@@ -167,6 +167,10 @@ slo:
     threshold: "0.5"
   errorRate:
     objective: 99.0
+  # Minimum requests in a burn-rate arm's long window (1h/6h page, 1d/3d
+  # ticket) before that arm may fire. Below it one request moves the ratio by
+  # more than 1/minEvents, which is noise, not a burn (templates/slo-alerts.yaml).
+  minEvents: 10
 
 # --- Database Migrations Configuration ---
 
