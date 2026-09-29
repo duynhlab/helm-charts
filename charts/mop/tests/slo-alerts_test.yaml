@@ -1,0 +1,88 @@
+suite: slo-alerts
+templates:
+  - slo-alerts.yaml
+tests:
+  - it: renders nothing when slo.enabled is false (default)
+    set:
+      name: auth
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders one group per SLO, a page and a ticket rule each
+    set:
+      name: checkout
+      namespace: checkout
+      slo.enabled: true
+    asserts:
+      - isKind:
+          of: PrometheusRule
+      - equal:
+          path: metadata.namespace
+          value: monitoring
+      - lengthEqual:
+          path: spec.groups
+          count: 3
+      - equal:
+          path: spec.groups[1].name
+          value: slo-alerts-checkout-latency
+      - equal:
+          path: spec.groups[1].rules[0].alert
+          value: CheckoutHighLatency
+      - equal:
+          path: spec.groups[1].rules[0].labels.severity
+          value: page
+      - equal:
+          path: spec.groups[1].rules[0].labels.sloth_severity
+          value: page
+      - equal:
+          path: spec.groups[1].rules[1].labels.severity
+          value: ticket
+      - equal:
+          path: spec.groups[1].rules[1].labels.channel
+          value: "#incidents"
+
+  - it: repeats the Sloth burn-rate arms against the Sloth recording rules
+    set:
+      name: checkout
+      namespace: checkout
+      slo.enabled: true
+    asserts:
+      - matchRegex:
+          path: spec.groups[1].rules[0].expr
+          pattern: 'slo:sli_error:ratio_rate5m\{sloth_id="checkout-latency", sloth_service="checkout", sloth_slo="latency"\} > \(14\.4 \* \(1 - 95 / 100\)\)'
+      - matchRegex:
+          path: spec.groups[1].rules[0].expr
+          pattern: 'slo:sli_error:ratio_rate6h\{[^}]*\} > \(6 \* \(1 - 95 / 100\)\)'
+      - matchRegex:
+          path: spec.groups[1].rules[1].expr
+          pattern: 'slo:sli_error:ratio_rate3d\{[^}]*\} > \(1 \* \(1 - 95 / 100\)\)'
+
+  - it: guards every arm with a minimum event count over its long window
+    set:
+      name: checkout
+      namespace: checkout
+      slo.enabled: true
+    asserts:
+      - matchRegex:
+          path: spec.groups[0].rules[0].expr
+          pattern: 'sum\(increase\(http_server_request_duration_seconds_count\{app="checkout", namespace="checkout"\}\[1h\]\)\) >= 10'
+      - matchRegex:
+          path: spec.groups[0].rules[0].expr
+          pattern: '\[6h\]\)\) >= 10'
+      - matchRegex:
+          path: spec.groups[0].rules[1].expr
+          pattern: '\[1d\]\)\) >= 10'
+      - matchRegex:
+          path: spec.groups[0].rules[1].expr
+          pattern: '\[3d\]\)\) >= 10'
+
+  - it: honors slo.minEvents
+    set:
+      name: checkout
+      slo.enabled: true
+      slo.minEvents: 50
+    asserts:
+      - matchRegex:
+          path: spec.groups[2].rules[0].expr
+          pattern: '\[1h\]\)\) >= 50'

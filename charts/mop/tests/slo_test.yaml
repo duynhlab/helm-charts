@@ -58,6 +58,18 @@ tests:
       - equal:
           path: spec.slos[0].alerting.name
           value: AuthHighErrorRate
+
+  - it: leaves burn-rate alerting to slo-alerts.yaml
+    set:
+      name: auth
+      slo.enabled: true
+    asserts:
       - equal:
-          path: spec.slos[0].alerting.pageAlert.labels.channel
-          value: "#alerts"
+          path: spec.slos[0].alerting.pageAlert.disable
+          value: true
+      - equal:
+          path: spec.slos[1].alerting.ticketAlert.disable
+          value: true
+      - equal:
+          path: spec.slos[2].alerting.pageAlert.disable
+          value: true

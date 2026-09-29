@@ -46,14 +46,11 @@ spec:
         annotations:
           summary: "High 5xx error rate detected on {{ .Values.name }}"
           description: "Availability SLO is at risk. Current error rate is impacting {{ .Values.name }} service availability."
+        # Burn-rate alerts live in slo-alerts.yaml (min-events guard).
         pageAlert:
-          labels:
-            severity: page
-            channel: "#alerts"
+          disable: true
         ticketAlert:
-          labels:
-            severity: ticket
-            channel: "#incidents"
+          disable: true
 
     - name: "latency"
       objective: {{ .Values.slo.latency.objective }}
@@ -85,14 +82,11 @@ spec:
         annotations:
           summary: "High latency detected on {{ .Values.name }}"
           description: "More than {{ sub 100 (int .Values.slo.latency.objective) }}% of requests are slower than {{ .Values.slo.latency.threshold }}s threshold."
+        # Burn-rate alerts live in slo-alerts.yaml (min-events guard).
         pageAlert:
-          labels:
-            severity: page
-            channel: "#alerts"
+          disable: true
         ticketAlert:
-          labels:
-            severity: ticket
-            channel: "#incidents"
+          disable: true
 
     - name: "error-rate"
       objective: {{ .Values.slo.errorRate.objective }}
@@ -119,12 +113,9 @@ spec:
         annotations:
           summary: "High overall error rate (4xx + 5xx) on {{ .Values.name }}"
           description: "More than {{ sub 100 (int .Values.slo.errorRate.objective) }}% of requests are returning errors."
+        # Burn-rate alerts live in slo-alerts.yaml (min-events guard).
         pageAlert:
-          labels:
-            severity: page
-            channel: "#alerts"
+          disable: true
         ticketAlert:
-          labels:
-            severity: ticket
-            channel: "#incidents"
+          disable: true
 {{- end }}
