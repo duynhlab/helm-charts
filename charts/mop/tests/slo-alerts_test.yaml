@@ -22,7 +22,7 @@ tests:
           value: monitoring
       - lengthEqual:
           path: spec.groups
-          count: 3
+          count: 2
       - equal:
           path: spec.groups[1].name
           value: slo-alerts-checkout-latency
@@ -84,5 +84,17 @@ tests:
       slo.minEvents: 50
     asserts:
       - matchRegex:
-          path: spec.groups[2].rules[0].expr
+          path: spec.groups[1].rules[0].expr
           pattern: '\[1h\]\)\) >= 50'
+
+  - it: renders no 4xx-based error-rate SLO
+    set:
+      name: checkout
+      slo.enabled: true
+    asserts:
+      - notMatchRegex:
+          path: spec.groups[0].name
+          pattern: error-rate
+      - notMatchRegex:
+          path: spec.groups[1].name
+          pattern: error-rate
