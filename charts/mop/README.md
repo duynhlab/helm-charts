@@ -1,6 +1,6 @@
 # mop
 
-![Version: 0.18.0](https://img.shields.io/badge/Version-0.18.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 0.19.0](https://img.shields.io/badge/Version-0.19.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 A generic Helm chart for deploying Go microservices (Microservices Observability Platform)
 
@@ -61,7 +61,6 @@ A generic Helm chart for deploying Go microservices (Microservices Observability
 | slo.availability.objective | float | `99.5` |  |
 | slo.enabled | bool | `false` |  |
 | slo.env | string | `"monitoring"` |  |
-| slo.errorRate.objective | float | `99` |  |
 | slo.latency.objective | float | `95` |  |
 | slo.latency.threshold | string | `"0.5"` |  |
 | slo.minEvents | int | `10` | Minimum requests in a burn-rate arm's long window (1h/6h page, 1d/3d ticket) before that arm may fire. Below it one request moves the ratio by more than 1/minEvents, which is noise, not a burn (templates/slo-alerts.yaml). |

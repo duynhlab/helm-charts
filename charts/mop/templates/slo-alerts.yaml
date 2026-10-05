@@ -25,7 +25,6 @@ them keep working.
 {{- $slos := list
   (dict "slo" "availability" "objective" .Values.slo.availability.objective "alert" (printf "%sHighErrorRate" (.Values.name | title)) "category" "availability" "summary" (printf "High 5xx error rate detected on %s" .Values.name) "description" (printf "Availability SLO is at risk. Current error rate is impacting %s service availability." .Values.name))
   (dict "slo" "latency" "objective" .Values.slo.latency.objective "alert" (printf "%sHighLatency" (.Values.name | title)) "category" "latency" "summary" (printf "High latency detected on %s" .Values.name) "description" (printf "More than %d%% of requests are slower than %ss threshold." (sub 100 (int .Values.slo.latency.objective)) .Values.slo.latency.threshold))
-  (dict "slo" "error-rate" "objective" .Values.slo.errorRate.objective "alert" (printf "%sHighOverallErrorRate" (.Values.name | title)) "category" "errors" "summary" (printf "High overall error rate (4xx + 5xx) on %s" .Values.name) "description" (printf "More than %d%% of requests are returning errors." (sub 100 (int .Values.slo.errorRate.objective))))
 }}
 {{- /* severity, channel, then two arms of (factor, short, long) — Sloth's defaults for a 30d period */}}
 {{- $tiers := list

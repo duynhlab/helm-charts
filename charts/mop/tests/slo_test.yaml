@@ -29,7 +29,7 @@ tests:
           value: auth
       - lengthEqual:
           path: spec.slos
-          count: 3
+          count: 2
 
   - it: honors the availability objective override
     set:
@@ -70,6 +70,15 @@ tests:
       - equal:
           path: spec.slos[1].alerting.ticketAlert.disable
           value: true
+
+  - it: keeps only the availability and latency SLOs
+    set:
+      name: auth
+      slo.enabled: true
+    asserts:
       - equal:
-          path: spec.slos[2].alerting.pageAlert.disable
-          value: true
+          path: spec.slos[0].name
+          value: availability
+      - equal:
+          path: spec.slos[1].name
+          value: latency

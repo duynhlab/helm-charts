@@ -27,5 +27,3 @@ slo:
   latency:
     objective: 99.0
     threshold: "0.3"
-  errorRate:
-    objective: 99.5
