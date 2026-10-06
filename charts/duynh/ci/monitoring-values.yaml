@@ -1,6 +1,12 @@
 # Installs on the e2e KinD cluster (the workflow adds the Sloth and Prometheus
 # Operator CRDs): a Sloth service level in its own namespace and one extra
 # PrometheusRule rendered through extraObjects.
+replicaCount: 1
+
+image:
+  repository: nginx
+  tag: "1.27"
+
 sloth:
   enabled: true
   service: duynh-e2e
