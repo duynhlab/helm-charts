@@ -66,9 +66,15 @@
               "protocol": {
                 "type": "string",
                 "enum": ["TCP", "UDP", "SCTP"]
+              },
+              "appProtocol": {
+                "type": "string"
               }
             }
           }
+        },
+        "appProtocol": {
+          "type": "string"
         }
       }
     },

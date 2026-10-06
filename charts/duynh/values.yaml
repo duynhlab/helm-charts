@@ -42,8 +42,10 @@ service:
   enabled: true
   type: ClusterIP
   port: 80
+  # appProtocol of the http port (e.g. http, h2c); empty leaves it unset.
+  appProtocol: ""
   annotations: {}
-  # Additional ports, e.g. [{name: grpc, port: 9090, targetPort: grpc}].
+  # Additional ports, e.g. [{name: grpc, port: 9090, appProtocol: grpc}].
   extraPorts: []
 
 sloth:

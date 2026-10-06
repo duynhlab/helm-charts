@@ -62,7 +62,8 @@ helm template orders-api ./charts/duynh \
 | `containerName` | chart name | Name of the main container |
 | `extraPorts` | `[]` | More named container ports, e.g. `grpc` on 9090 |
 | `service.enabled` | `true` | Set `false` for a workload that serves no traffic |
-| `service.extraPorts` | `[]` | More Service ports; `targetPort` defaults to the port name |
+| `service.appProtocol` | unset | `appProtocol` of the http Service port (e.g. `http`, `h2c`) |
+| `service.extraPorts` | `[]` | More Service ports; `targetPort` defaults to the port name; each may set `appProtocol` |
 | `initContainers` | `[]` | Init containers, rendered through `tpl` (e.g. a schema migration) |
 | `extraSelectorLabels` | `{}` | Added to the selector and pod labels; only to keep an existing selector |
 | `sloth.namespace` | release namespace | Where the `PrometheusServiceLevel` is created |
@@ -79,7 +80,8 @@ the `mop` chart used to render. The mapping:
 | --- | --- |
 | `name` | `nameOverride` (and `containerName` for the container) |
 | `service.http.port` / `containerPort` | `service.port` / `containerPort` |
-| `service.grpc.*` | `extraPorts` + `service.extraPorts` |
+| `service.grpc.*` | `extraPorts` + `service.extraPorts` (with `appProtocol: grpc`) |
+| Service `appProtocol: http` | `service.appProtocol: http` |
 | `labels` | `podLabels` |
 | `migrations.*` | an `initContainers` entry, with its own credential |
 | `dbCredentials.*` | `volumes` + `volumeMounts` + a `DB_PASSWORD_FILE` env |
