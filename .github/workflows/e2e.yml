@@ -70,9 +70,15 @@ jobs:
             oci://ghcr.io/prometheus-community/charts/prometheus-operator-crds \
             --version "${PROM_CRDS_VERSION}"
           kubectl apply --server-side -f "https://raw.githubusercontent.com/slok/sloth/${SLOTH_VERSION}/pkg/kubernetes/gen/crd/sloth.slok.dev_prometheusservicelevels.yaml"
-          kubectl wait --for condition=established --timeout=60s \
-            crd/prometheusrules.monitoring.coreos.com \
-            crd/prometheusservicelevels.sloth.slok.dev
+          # A CRD created a moment ago has no .status.conditions yet, and
+          # kubectl wait errors on that instead of waiting, so retry briefly.
+          for i in $(seq 1 30); do
+            kubectl wait --for condition=established --timeout=10s \
+              crd/prometheusrules.monitoring.coreos.com \
+              crd/prometheusservicelevels.sloth.slok.dev && break
+            [ "$i" -eq 30 ] && exit 1
+            sleep 2
+          done
 
       - name: Lint + install changed charts on KinD (+ helm test)
         if: steps.list-changed.outputs.changed == 'true'
