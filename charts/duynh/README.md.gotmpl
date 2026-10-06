@@ -72,7 +72,7 @@ Health probes are raw Kubernetes probe objects. A liveness probe should normally
 
 ## Migrating from mop
 
-`charts/duynh/ci/homelab-values.yaml` is a complete microservice in the shape
+`charts/duynh/examples/values-homelab.yaml` is a complete microservice in the shape
 the `mop` chart used to render. The mapping:
 
 | `mop` value | `duynh` value |

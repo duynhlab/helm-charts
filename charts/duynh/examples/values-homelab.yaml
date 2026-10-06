@@ -2,7 +2,8 @@
 # in an init container with its own credential, HTTP and gRPC ports, the
 # database password read from a mounted Secret file, an `app` label for metric
 # relabelling, a Sloth SLO in the namespace the operator watches, and one extra
-# PrometheusRule.
+# PrometheusRule. It lives in examples/, not ci/, because chart-testing installs
+# every ci/ file and this one needs the Sloth and Prometheus Operator CRDs.
 nameOverride: review
 containerName: review
 replicaCount: 1

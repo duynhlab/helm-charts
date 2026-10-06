@@ -24,7 +24,7 @@ lint-mop: ## helm lint charts/mop: default + gRPC+SLO
 	helm lint charts/mop --set name=test --set service.grpc.enabled=true --set slo.enabled=true
 
 lint-duynh: ## helm lint charts/duynh: default + HTTPRoute+HPA+PDB+Sloth + homelab shape
-	helm lint charts/duynh -f charts/duynh/ci/homelab-values.yaml
+	helm lint charts/duynh -f charts/duynh/examples/values-homelab.yaml
 	helm lint charts/duynh --set name=test
 	helm lint charts/duynh --set name=test --set httpRoute.enabled=true
 	helm lint charts/duynh --set name=test --set autoscaling.enabled=true --set pdb.enabled=true
