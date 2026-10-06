@@ -1,0 +1,4 @@
+service: checkout
+namespace: monitoring
+labels:
+  team: platform

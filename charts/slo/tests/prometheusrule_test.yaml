@@ -1,0 +1,64 @@
+suite: burn-rate PrometheusRule
+templates:
+  - prometheusrule.yaml
+release:
+  name: review-slo
+  namespace: review
+tests:
+  - it: renders one group per SLO with page and ticket rules
+    set:
+      service: review
+      namespace: monitoring
+    asserts:
+      - isKind:
+          of: PrometheusRule
+      - equal:
+          path: metadata.name
+          value: review-slo-burn
+      - equal:
+          path: metadata.namespace
+          value: monitoring
+      - lengthEqual:
+          path: spec.groups
+          count: 2
+      - equal:
+          path: spec.groups[0].name
+          value: slo-alerts-review-availability
+      - lengthEqual:
+          path: spec.groups[0].rules
+          count: 2
+      - equal:
+          path: spec.groups[0].rules[0].labels.severity
+          value: page
+      - equal:
+          path: spec.groups[0].rules[1].labels.channel
+          value: "#incidents"
+
+  - it: guards every arm with minEvents
+    set:
+      service: review
+      minEvents: 25
+    asserts:
+      - matchRegex:
+          path: spec.groups[0].rules[0].expr
+          pattern: 'sum\(increase\(http_server_request_duration_seconds_count\{app="review", namespace="review"\}\[1h\]\)\) >= 25'
+      - matchRegex:
+          path: spec.groups[0].rules[0].expr
+          pattern: 'slo:sli_error:ratio_rate5m\{sloth_id="review-availability", sloth_service="review", sloth_slo="availability"\} > \(14\.4 \* \(1 - 99\.5 / 100\)\)'
+
+  - it: names the latency alert after the service
+    set:
+      service: review
+    asserts:
+      - equal:
+          path: spec.groups[1].rules[0].alert
+          value: ReviewHighLatency
+
+  - it: is absent when both SLOs are disabled
+    set:
+      service: review
+      availability.enabled: false
+      latency.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0

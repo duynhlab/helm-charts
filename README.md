@@ -9,7 +9,8 @@ Published to GHCR (OCI) and [GitHub Pages](https://duynhlab.github.io/helm-chart
 |-------|---------|-------------|
 | [`mop`](charts/mop) | 0.17.2 | Generic chart for Go microservices — Deployment, multi-port Service (HTTP + optional gRPC), golang-migrate, Sloth SLO. |
 | [`grafana-dashboards`](charts/grafana-dashboards) | 0.2.2 | Grafana dashboards as ConfigMaps for sidecar auto-provisioning. |
-| [`duynh`](charts/duynh) | 0.2.2 | Stateless microservices on Amazon EKS — Deployment, Service, HPA, PDB, ServiceAccount, Envoy Gateway HTTPRoute, Sloth SLO. |
+| [`duynh`](charts/duynh) | 0.3.0 | Stateless microservices on Amazon EKS — Deployment, Service, HPA, PDB, ServiceAccount, Envoy Gateway HTTPRoute, Sloth SLO. |
+| [`slo`](charts/slo) | 0.1.0 | Request SLOs for one HTTP service — Sloth `PrometheusServiceLevel` plus burn-rate `PrometheusRule` with a minimum-events guard. |
 | [`vm-rules`](charts/vm-rules) | 0.1.0 | Static VictoriaMetrics alerting rules as VMRule objects — cert-manager, Flux, kubelet, Kubernetes workloads, node-exporter, Redis. |
 
 See each chart's README for configuration details.
@@ -22,6 +23,7 @@ See each chart's README for configuration details.
 crane ls ghcr.io/duynhlab/helm-charts/mop
 crane ls ghcr.io/duynhlab/helm-charts/grafana-dashboards
 crane ls ghcr.io/duynhlab/helm-charts/duynh
+crane ls ghcr.io/duynhlab/helm-charts/slo
 crane ls ghcr.io/duynhlab/helm-charts/vm-rules
 ```
 
@@ -36,8 +38,12 @@ helm install <release> oci://ghcr.io/duynhlab/helm-charts/mop --version 0.17.2 \
 helm install grafana-dashboards oci://ghcr.io/duynhlab/helm-charts/grafana-dashboards --version 0.2.2
 
 # duynh
-helm install <release> oci://ghcr.io/duynhlab/helm-charts/duynh --version 0.2.2 \
+helm install <release> oci://ghcr.io/duynhlab/helm-charts/duynh --version 0.3.0 \
   --set image.repository=<image>
+
+# slo (needs the Sloth and Prometheus Operator CRDs)
+helm install <svc>-slo oci://ghcr.io/duynhlab/helm-charts/slo --version 0.1.0 \
+  --namespace <svc> --set service=<svc> --set namespace=monitoring
 
 # vm-rules (needs the VictoriaMetrics operator CRDs)
 helm install vm-rules oci://ghcr.io/duynhlab/helm-charts/vm-rules --version 0.1.0 -n monitoring
@@ -50,7 +56,7 @@ helm repo add duynhlab https://duynhlab.github.io/helm-charts
 helm repo update
 helm install <release> duynhlab/mop --version 0.17.2 --set name=<svc> ...
 helm install grafana-dashboards duynhlab/grafana-dashboards --version 0.2.2
-helm install <release> duynhlab/duynh --version 0.2.2 --set image.repository=<image>
+helm install <release> duynhlab/duynh --version 0.3.0 --set image.repository=<image>
 helm install vm-rules duynhlab/vm-rules --version 0.1.0 -n monitoring
 ```
 

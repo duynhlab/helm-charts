@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "service": {
+      "type": "string",
+      "minLength": 1
+    },
+    "namespace": {
+      "type": "string"
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "boolean"
+        ]
+      }
+    },
+    "selector": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "required": [
+        "total",
+        "bucket",
+        "statusLabel",
+        "errorStatusRegex"
+      ],
+      "properties": {
+        "total": {
+          "type": "string",
+          "minLength": 1
+        },
+        "bucket": {
+          "type": "string",
+          "minLength": 1
+        },
+        "statusLabel": {
+          "type": "string",
+          "minLength": 1
+        },
+        "errorStatusRegex": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "availability": {
+      "type": "object",
+      "required": [
+        "enabled",
+        "objective"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "objective": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 100
+        }
+      }
+    },
+    "latency": {
+      "type": "object",
+      "required": [
+        "enabled",
+        "objective",
+        "threshold"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "objective": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 100
+        },
+        "threshold": {
+          "type": [
+            "string",
+            "number"
+          ]
+        }
+      }
+    },
+    "minEvents": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "alertNames": {
+      "type": "object",
+      "properties": {
+        "availability": {
+          "type": "string"
+        },
+        "latency": {
+          "type": "string"
+        }
+      }
+    },
+    "tiers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "severity",
+          "channel",
+          "arms"
+        ],
+        "properties": {
+          "severity": {
+            "type": "string"
+          },
+          "channel": {
+            "type": "string"
+          },
+          "arms": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "service",
+    "metrics",
+    "availability",
+    "latency",
+    "minEvents",
+    "tiers"
+  ]
+}

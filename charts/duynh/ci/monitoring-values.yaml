@@ -1,0 +1,30 @@
+# Installs on the e2e KinD cluster (the workflow adds the Sloth and Prometheus
+# Operator CRDs): a Sloth service level in its own namespace and one extra
+# PrometheusRule rendered through extraObjects.
+sloth:
+  enabled: true
+  service: duynh-e2e
+  slos:
+    - name: availability
+      objective: 99.5
+      sli:
+        events:
+          errorQuery: sum(rate(http_requests_total{code=~"5.."}[{{.window}}]))
+          totalQuery: sum(rate(http_requests_total[{{.window}}]))
+      alerting:
+        pageAlert:
+          disable: true
+        ticketAlert:
+          disable: true
+
+extraObjects:
+  - apiVersion: monitoring.coreos.com/v1
+    kind: PrometheusRule
+    metadata:
+      name: "{{ include \"duynh.fullname\" . }}-extra"
+    spec:
+      groups:
+        - name: duynh-e2e
+          rules:
+            - alert: DuynhE2ENeverFires
+              expr: vector(0) > 1

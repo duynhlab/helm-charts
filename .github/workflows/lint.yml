@@ -26,7 +26,10 @@ jobs:
           for d in charts/*/; do
             chart_name=$(basename "$d")
             echo "::group::Linting $chart_name"
-            if ! helm lint "$d"; then
+            # A chart with required values (charts/slo) lints with its CI defaults.
+            extra=()
+            if [ -f "${d}ci/default-values.yaml" ]; then extra=(-f "${d}ci/default-values.yaml"); fi
+            if ! helm lint "$d" "${extra[@]}"; then
               exit_code=1
             fi
             echo "::endgroup::"
@@ -39,7 +42,9 @@ jobs:
           for d in charts/*/; do
             chart_name=$(basename "$d")
             echo "::group::Template $chart_name"
-            if ! helm template test "$d" --namespace test; then
+            extra=()
+            if [ -f "${d}ci/default-values.yaml" ]; then extra=(-f "${d}ci/default-values.yaml"); fi
+            if ! helm template test "$d" --namespace test "${extra[@]}"; then
               exit_code=1
             fi
             echo "::endgroup::"
@@ -91,3 +96,8 @@ jobs:
         run: |
           helm lint charts/duynh/ -f charts/duynh/examples/values-homelab.yaml
           helm template review charts/duynh/ --namespace review -f charts/duynh/examples/values-homelab.yaml
+
+      - name: Lint + template slo (availability only, custom selector)
+        run: |
+          helm lint charts/slo/ --set service=test --set latency.enabled=false --set selector.job=test-api
+          helm template test charts/slo/ --namespace test --set service=test --set namespace=monitoring

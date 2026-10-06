@@ -1,0 +1,59 @@
+# Service the SLOs measure. Required; it becomes the PrometheusServiceLevel
+# spec.service and so part of every Sloth id (<service>-<slo>).
+service: ""
+
+# Namespace for the PrometheusServiceLevel and the PrometheusRule; defaults to
+# the release namespace. Set it when the Sloth and rule operators watch one
+# namespace only.
+namespace: ""
+
+# Extra labels on the PrometheusServiceLevel (spec.labels). `service` and
+# `namespace` are always added.
+labels: {}
+
+# Label matchers selecting the service's request series. Defaults to
+# app=<service>, namespace=<release namespace>.
+selector: {}
+
+metrics:
+  # Counter of all requests (a histogram's _count series).
+  total: http_server_request_duration_seconds_count
+  # Histogram buckets of request duration, for the latency SLO.
+  bucket: http_server_request_duration_seconds_bucket
+  # Label carrying the HTTP status code, for the availability SLO.
+  statusLabel: http_response_status_code
+  # Status codes that count as errors.
+  errorStatusRegex: "5.."
+
+availability:
+  enabled: true
+  objective: 99.5
+
+latency:
+  enabled: true
+  objective: 95.0
+  # Seconds; must equal one of the histogram's bucket boundaries.
+  threshold: "0.5"
+
+# Each burn-rate arm fires only when its long window saw at least this many
+# requests, so a handful of requests on an idle service cannot page.
+minEvents: 10
+
+# Alert names; default to <Service>HighErrorRate and <Service>HighLatency.
+alertNames:
+  availability: ""
+  latency: ""
+
+# Multi-window burn-rate tiers. Each arm is [factor, short window, long
+# window]; the defaults are Sloth's for a 30-day period.
+tiers:
+  - severity: page
+    channel: "#alerts"
+    arms:
+      - ["14.4", "5m", "1h"]
+      - ["6", "30m", "6h"]
+  - severity: ticket
+    channel: "#incidents"
+    arms:
+      - ["3", "2h", "1d"]
+      - ["1", "6h", "3d"]

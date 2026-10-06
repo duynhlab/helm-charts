@@ -2,7 +2,7 @@ CHART ?= charts/mop
 # promtool runs in a container; podman works as a drop-in for docker here.
 CONTAINER ?= docker
 
-.PHONY: lint lint-mop lint-duynh lint-vm-rules lint-all template template-mop template-duynh template-vm-rules check-rules unittest e2e e2e-sync docs help
+.PHONY: lint lint-mop lint-duynh lint-slo lint-vm-rules lint-all template template-mop template-duynh template-slo template-vm-rules check-rules unittest e2e e2e-sync docs help
 
 help: ## show available targets
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  %-16s %s\n", $$1, $$2}'
@@ -13,7 +13,8 @@ docs: ## regenerate chart READMEs with helm-docs
 lint-all: ## helm lint + template all charts (matches CI lint.yml)
 	@for d in charts/*/; do \
 	  echo "== $$d =="; \
-	  helm lint "$$d" && helm template test "$$d" --namespace test; \
+	  extra=""; [ -f "$${d}ci/default-values.yaml" ] && extra="-f $${d}ci/default-values.yaml"; \
+	  helm lint "$$d" $$extra && helm template test "$$d" --namespace test $$extra; \
 	done
 
 lint: ## helm lint $(CHART): default + chart-specific feature sets
@@ -30,6 +31,10 @@ lint-duynh: ## helm lint charts/duynh: default + HTTPRoute+HPA+PDB+Sloth + homel
 	helm lint charts/duynh --set name=test --set autoscaling.enabled=true --set pdb.enabled=true
 	helm lint charts/duynh --set name=test --set sloth.enabled=true \
 	  --set sloth.service=test --set sloth.slos[0].name=availability --set sloth.slos[0].objective=99.9
+
+lint-slo: ## helm lint charts/slo: defaults + one SLO with a custom selector
+	helm lint charts/slo -f charts/slo/ci/default-values.yaml
+	helm lint charts/slo --set service=test --set latency.enabled=false --set selector.job=test-api
 
 lint-vm-rules: ## helm lint charts/vm-rules: default + all rule groups enabled
 	helm lint charts/vm-rules
@@ -56,6 +61,9 @@ template-duynh: ## render charts/duynh with HTTPRoute + HPA + Sloth
 	  --set autoscaling.enabled=true --set sloth.enabled=true \
 	  --set sloth.service=test --set sloth.slos[0].name=availability --set sloth.slos[0].objective=99.9 \
 	  --namespace test
+
+template-slo: ## render charts/slo for one service in the monitoring namespace
+	helm template checkout-slo charts/slo --namespace checkout -f charts/slo/ci/default-values.yaml
 
 template-vm-rules: ## render charts/vm-rules with every rule group enabled
 	helm template test charts/vm-rules --namespace monitoring \

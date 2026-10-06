@@ -1,0 +1,6 @@
+apiVersion: v2
+name: slo
+description: Request SLOs for one HTTP service — a Sloth PrometheusServiceLevel plus burn-rate alerts guarded by a minimum event count
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
