@@ -37,3 +37,11 @@ tests:
       - equal:
           path: spec.rules[0].backendRefs[0].name
           value: orders-api
+
+  - it: fails when the route has no Service to point at
+    set:
+      httpRoute.enabled: true
+      service.enabled: false
+    asserts:
+      - failedTemplate:
+          errorMessage: "httpRoute.enabled requires service.enabled: the route's backend is the chart's Service"

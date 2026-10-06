@@ -3,6 +3,8 @@ HTTPRoute {{ include "duynh.fullname" . }} was created.
 
 Check whether Envoy Gateway accepted it:
   kubectl get httproute {{ include "duynh.fullname" . }} -n {{ .Release.Namespace }} -o wide
+{{- else if not .Values.service.enabled }}
+No Service was created (service.enabled=false); the workload serves no traffic.
 {{- else }}
 The service is internal. To access it locally:
   kubectl port-forward -n {{ .Release.Namespace }} service/{{ include "duynh.fullname" . }} 8080:{{ .Values.service.port }}

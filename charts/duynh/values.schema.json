@@ -40,6 +40,35 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 65535
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "extraPorts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "port"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 15
+              },
+              "port": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65535
+              },
+              "targetPort": {
+                "type": ["integer", "string"]
+              },
+              "protocol": {
+                "type": "string",
+                "enum": ["TCP", "UDP", "SCTP"]
+              }
+            }
+          }
         }
       }
     },
@@ -139,6 +168,9 @@
           "items": {
             "type": "object"
           }
+        },
+        "namespace": {
+          "type": "string"
         }
       },
       "allOf": [
@@ -162,6 +194,50 @@
           }
         }
       ]
+    },
+    "containerName": {
+      "type": "string"
+    },
+    "extraSelectorLabels": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "extraPorts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "containerPort"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 15
+          },
+          "containerPort": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "protocol": {
+            "type": "string",
+            "enum": ["TCP", "UDP", "SCTP"]
+          }
+        }
+      }
+    },
+    "initContainers": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "extraObjects": {
+      "type": "array",
+      "items": {
+        "type": ["object", "string"]
+      }
     }
   },
   "required": [

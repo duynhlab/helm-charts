@@ -5,6 +5,9 @@ apiVersion: sloth.slok.dev/v1
 kind: PrometheusServiceLevel
 metadata:
   name: {{ include "duynh.fullname" . }}
+  {{- with .Values.sloth.namespace }}
+  namespace: {{ . }}
+  {{- end }}
   labels:
     {{- include "duynh.labels" . | nindent 4 }}
   {{- with .Values.sloth.annotations }}

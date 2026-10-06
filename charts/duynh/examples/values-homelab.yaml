@@ -1,0 +1,115 @@
+# A microservice shaped like the duynhlab homelab services: a schema migration
+# in an init container with its own credential, HTTP and gRPC ports, the
+# database password read from a mounted Secret file, an `app` label for metric
+# relabelling, a Sloth SLO in the namespace the operator watches, and one extra
+# PrometheusRule. It lives in examples/, not ci/, because chart-testing installs
+# every ci/ file and this one needs the Sloth and Prometheus Operator CRDs.
+nameOverride: review
+containerName: review
+replicaCount: 1
+
+image:
+  repository: ghcr.io/duynhlab/review-service/review-service
+  tag: "1.4.0"
+
+containerPort: 8080
+extraPorts:
+  - name: grpc
+    containerPort: 9090
+
+podLabels:
+  app: review
+extraSelectorLabels:
+  app: review
+
+initContainers:
+  - name: migrate
+    image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+    args: ["migrate"]
+    env:
+      - name: DB_HOST
+        value: platform-db-rw.platform.svc.cluster.local
+      - name: DB_USER
+        value: review_migrator
+      - name: DB_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: platform-db-review-migrator-secret
+            key: password
+
+env:
+  - name: DB_HOST
+    value: platform-db-pooler-rw.platform.svc.cluster.local
+  - name: DB_USER
+    value: review_runtime
+  - name: DB_PASSWORD_FILE
+    value: /etc/db/secret/password
+
+volumes:
+  - name: db-credentials
+    secret:
+      secretName: platform-db-review-runtime-secret
+volumeMounts:
+  - name: db-credentials
+    mountPath: /etc/db/secret
+    readOnly: true
+
+service:
+  port: 8080
+  extraPorts:
+    - name: grpc
+      port: 9090
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 5
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 32Mi
+  limits:
+    memory: 64Mi
+
+sloth:
+  enabled: true
+  namespace: monitoring
+  service: review
+  labels:
+    team: platform
+  slos:
+    - name: availability
+      objective: 99.5
+      sli:
+        events:
+          errorQuery: sum(rate(http_server_request_duration_seconds_count{app="review",http_response_status_code=~"5.."}[{{.window}}]))
+          totalQuery: sum(rate(http_server_request_duration_seconds_count{app="review"}[{{.window}}]))
+      alerting:
+        pageAlert:
+          disable: true
+        ticketAlert:
+          disable: true
+
+extraObjects:
+  - apiVersion: monitoring.coreos.com/v1
+    kind: PrometheusRule
+    metadata:
+      name: "{{ include \"duynh.fullname\" . }}-slo-burn"
+      namespace: monitoring
+    spec:
+      groups:
+        - name: review-slo-burn
+          rules:
+            - alert: ReviewHighErrorRate
+              expr: vector(0) > 1
+              labels:
+                severity: critical

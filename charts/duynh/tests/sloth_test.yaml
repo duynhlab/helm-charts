@@ -37,3 +37,13 @@ tests:
       - equal:
           path: spec.slos[0].alerting.pageAlert.labels.severity
           value: critical
+
+  - it: places the service level in sloth.namespace when set
+    values:
+      - ../examples/values-orders.yaml
+    set:
+      sloth.namespace: monitoring
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: monitoring

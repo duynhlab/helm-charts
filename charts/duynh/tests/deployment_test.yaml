@@ -42,3 +42,73 @@ tests:
       - equal:
           path: spec.template.spec.topologySpreadConstraints[0].topologyKey
           value: topology.kubernetes.io/zone
+
+  - it: names the main container after the chart by default
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: duynh
+
+  - it: honours containerName
+    set:
+      containerName: review
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: review
+
+  - it: renders extra container ports after http
+    set:
+      extraPorts:
+        - name: grpc
+          containerPort: 9090
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports[1]
+          value:
+            name: grpc
+            containerPort: 9090
+            protocol: TCP
+
+  - it: renders init containers through tpl
+    set:
+      image.repository: ghcr.io/example/app
+      image.tag: "2.0.0"
+      initContainers:
+        - name: migrate
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          args: ["migrate"]
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: migrate
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: ghcr.io/example/app:2.0.0
+
+  - it: adds extraSelectorLabels to the selector and pod labels
+    set:
+      extraSelectorLabels:
+        app: review
+    asserts:
+      - equal:
+          path: spec.selector.matchLabels.app
+          value: review
+      - equal:
+          path: spec.template.metadata.labels.app
+          value: review
+
+  - it: renders a label set in podLabels and extraSelectorLabels once
+    set:
+      podLabels:
+        app: review
+        tier: api
+      extraSelectorLabels:
+        app: review
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels.app
+          value: review
+      - equal:
+          path: spec.template.metadata.labels.tier
+          value: api

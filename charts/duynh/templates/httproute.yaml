@@ -1,4 +1,7 @@
 {{- if .Values.httpRoute.enabled }}
+{{- if not .Values.service.enabled }}
+{{- fail "httpRoute.enabled requires service.enabled: the route's backend is the chart's Service" }}
+{{- end }}
 {{- $fullName := include "duynh.fullname" . }}
 {{- $servicePort := .Values.service.port }}
 apiVersion: gateway.networking.k8s.io/v1

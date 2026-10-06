@@ -8,6 +8,8 @@ image:
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
+# Name of the main container; defaults to the chart name.
+containerName: ""
 
 serviceAccount:
   create: true
@@ -18,23 +20,37 @@ serviceAccount:
 deploymentAnnotations: {}
 podAnnotations: {}
 podLabels: {}
+# Added to the Deployment selector and the pod labels. The selector is
+# immutable, so set this only to keep an existing selector when adopting
+# a workload from another chart.
+extraSelectorLabels: {}
 
 podSecurityContext: {}
 securityContext: {}
 
 containerPort: 80
+# Additional named container ports, e.g. [{name: grpc, containerPort: 9090}].
+extraPorts: []
 command: []
 args: []
 env: []
 envFrom: []
+# Init containers, rendered through tpl (e.g. a schema migration).
+initContainers: []
 
 service:
+  enabled: true
   type: ClusterIP
   port: 80
   annotations: {}
+  # Additional ports, e.g. [{name: grpc, port: 9090, targetPort: grpc}].
+  extraPorts: []
 
 sloth:
   enabled: false
+  # Namespace for the PrometheusServiceLevel; defaults to the release
+  # namespace. Set it when the Sloth operator watches one namespace only.
+  namespace: ""
   annotations: {}
   service: ""
   labels: {}
@@ -98,3 +114,6 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 topologySpreadConstraints: []
+
+# Extra manifests rendered with the release, each through tpl (maps or strings).
+extraObjects: []
