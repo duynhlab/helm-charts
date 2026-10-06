@@ -42,3 +42,23 @@ tests:
     asserts:
       - hasDocuments:
           count: 0
+
+  - it: sets appProtocol on the http and extra ports when given
+    set:
+      service.appProtocol: http
+      service.extraPorts:
+        - name: grpc
+          port: 9090
+          appProtocol: grpc
+    asserts:
+      - equal:
+          path: spec.ports[0].appProtocol
+          value: http
+      - equal:
+          path: spec.ports[1].appProtocol
+          value: grpc
+
+  - it: leaves appProtocol unset by default
+    asserts:
+      - notExists:
+          path: spec.ports[0].appProtocol

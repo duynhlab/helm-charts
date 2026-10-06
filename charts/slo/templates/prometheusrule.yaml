@@ -1,0 +1,69 @@
+{{- /*
+Burn-rate alerts for the SLOs in prometheusservicelevel.yaml, emitted here
+instead of by Sloth.
+
+Sloth still owns the SLIs and every recording rule; the service level only sets
+pageAlert/ticketAlert `disable: true`. These rules repeat Sloth's own
+multi-window expressions (the names, labels and annotations Sloth would have
+generated) and add one thing Sloth has no field for: a minimum number of
+requests in each arm's long window (`minEvents`). A ratio over a handful of
+requests is not a burn rate; below minEvents one request moves it by more than
+1/minEvents, so the arm stays silent while the ticket arms (1d / 3d long
+windows) still catch a sustained problem on a low-traffic service.
+
+`max(...) without (sloth_window)` keeps sloth_id / sloth_slo / sloth_service on
+the result, so Alertmanager routes and inhibitions that match them keep working.
+*/}}
+{{- $root := . }}
+{{- $svc := include "slo.service" . }}
+{{- $total := printf "%s{%s}" .Values.metrics.total (include "slo.matchers" (dict "root" .)) }}
+{{- $slos := list }}
+{{- if .Values.availability.enabled }}
+{{- $slos = append $slos (dict "slo" "availability" "objective" .Values.availability.objective "alert" (include "slo.alertName" (dict "root" . "slo" "availability" "suffix" "HighErrorRate")) "category" "availability" "summary" (printf "High 5xx error rate detected on %s" $svc) "description" (printf "Availability SLO is at risk. Current error rate is impacting %s service availability." $svc)) }}
+{{- end }}
+{{- if .Values.latency.enabled }}
+{{- $slos = append $slos (dict "slo" "latency" "objective" .Values.latency.objective "alert" (include "slo.alertName" (dict "root" . "slo" "latency" "suffix" "HighLatency")) "category" "latency" "summary" (printf "High latency detected on %s" $svc) "description" (printf "More than %d%% of requests are slower than %ss threshold." (sub 100 (int .Values.latency.objective)) (.Values.latency.threshold | toString))) }}
+{{- end }}
+{{- if $slos }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ $svc }}-slo-burn
+  namespace: {{ include "slo.namespace" . }}
+  labels:
+    {{- include "slo.labels" . | nindent 4 }}
+spec:
+  groups:
+    {{- range $s := $slos }}
+    {{- $id := printf "%s-%s" $svc $s.slo }}
+    - name: slo-alerts-{{ $id }}
+      rules:
+        {{- range $t := $root.Values.tiers }}
+        - alert: {{ $s.alert }}
+          expr: |
+            {{- range $i, $arm := $t.arms }}
+            {{- $sel := printf "{sloth_id=%q, sloth_service=%q, sloth_slo=%q}" $id $svc $s.slo }}
+            {{- if $i }}
+            or
+            {{- end }}
+            (
+                max(slo:sli_error:ratio_rate{{ index $arm 1 }}{{ $sel }} > ({{ index $arm 0 }} * (1 - {{ $s.objective }} / 100))) without (sloth_window)
+                and
+                max(slo:sli_error:ratio_rate{{ index $arm 2 }}{{ $sel }} > ({{ index $arm 0 }} * (1 - {{ $s.objective }} / 100))) without (sloth_window)
+                and on()
+                sum(increase({{ $total }}[{{ index $arm 2 }}])) >= {{ $root.Values.minEvents }}
+            )
+            {{- end }}
+          labels:
+            severity: {{ $t.severity }}
+            sloth_severity: {{ $t.severity }}
+            channel: {{ $t.channel | quote }}
+            category: {{ $s.category }}
+            service: {{ $svc | quote }}
+          annotations:
+            title: "({{ $t.severity }}) {{`{{$labels.sloth_service}} {{$labels.sloth_slo}}`}} SLO error budget burn rate is too fast."
+            summary: {{ $s.summary | quote }}
+            description: {{ $s.description | quote }}
+        {{- end }}
+    {{- end }}
+{{- end }}

@@ -1,0 +1,74 @@
+{{- if or .Values.availability.enabled .Values.latency.enabled }}
+{{- $svc := include "slo.service" . }}
+{{- $m := .Values.metrics }}
+{{- $all := include "slo.matchers" (dict "root" .) }}
+{{- $errors := include "slo.matchers" (dict "root" . "extra" (printf "%s=~%q" $m.statusLabel $m.errorStatusRegex)) }}
+{{- $fast := include "slo.matchers" (dict "root" . "extra" (printf "le=%q" (.Values.latency.threshold | toString))) }}
+apiVersion: sloth.slok.dev/v1
+kind: PrometheusServiceLevel
+metadata:
+  name: {{ $svc }}-slo
+  namespace: {{ include "slo.namespace" . }}
+  labels:
+    {{- include "slo.labels" . | nindent 4 }}
+spec:
+  service: {{ $svc | quote }}
+  labels:
+    {{- range $k, $v := .Values.labels }}
+    {{ $k }}: {{ $v | toString | quote }}
+    {{- end }}
+    service: {{ $svc | quote }}
+    namespace: {{ .Release.Namespace | quote }}
+  slos:
+    {{- if .Values.availability.enabled }}
+    - name: "availability"
+      objective: {{ .Values.availability.objective }}
+      description: "Availability measures the ratio of successful requests (non-5xx) to total requests"
+      sli:
+        events:
+          errorQuery: |
+            sum(rate({{ $m.total }}{ {{- $errors -}} }[{{`{{.window}}`}}]))
+          totalQuery: |
+            sum(rate({{ $m.total }}{ {{- $all -}} }[{{`{{.window}}`}}]))
+      alerting:
+        name: {{ include "slo.alertName" (dict "root" . "slo" "availability" "suffix" "HighErrorRate") }}
+        labels:
+          severity: critical
+          category: availability
+          service: {{ $svc | quote }}
+        annotations:
+          summary: "High 5xx error rate detected on {{ $svc }}"
+          description: "Availability SLO is at risk. Current error rate is impacting {{ $svc }} service availability."
+        # Burn-rate alerts live in prometheusrule.yaml (min-events guard).
+        pageAlert:
+          disable: true
+        ticketAlert:
+          disable: true
+    {{- end }}
+    {{- if .Values.latency.enabled }}
+    - name: "latency"
+      objective: {{ .Values.latency.objective }}
+      description: "Latency measures the ratio of requests faster than {{ .Values.latency.threshold }}s to total requests"
+      sli:
+        events:
+          errorQuery: |
+            sum(rate({{ $m.total }}{ {{- $all -}} }[{{`{{.window}}`}}]))
+            -
+            sum(rate({{ $m.bucket }}{ {{- $fast -}} }[{{`{{.window}}`}}]))
+          totalQuery: |
+            sum(rate({{ $m.total }}{ {{- $all -}} }[{{`{{.window}}`}}]))
+      alerting:
+        name: {{ include "slo.alertName" (dict "root" . "slo" "latency" "suffix" "HighLatency") }}
+        labels:
+          severity: warning
+          category: latency
+          service: {{ $svc | quote }}
+        annotations:
+          summary: "High latency detected on {{ $svc }}"
+          description: "More than {{ sub 100 (int .Values.latency.objective) }}% of requests are slower than {{ .Values.latency.threshold }}s threshold."
+        pageAlert:
+          disable: true
+        ticketAlert:
+          disable: true
+    {{- end }}
+{{- end }}

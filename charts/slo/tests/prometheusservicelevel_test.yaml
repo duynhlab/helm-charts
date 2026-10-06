@@ -1,0 +1,95 @@
+suite: PrometheusServiceLevel
+templates:
+  - prometheusservicelevel.yaml
+release:
+  name: review-slo
+  namespace: review
+tests:
+  - it: fails without a service
+    asserts:
+      - failedTemplate:
+          errorPattern: "service"
+
+  - it: renders both SLOs for the service
+    set:
+      service: review
+      namespace: monitoring
+      labels:
+        team: platform
+    asserts:
+      - isKind:
+          of: PrometheusServiceLevel
+      - equal:
+          path: metadata.name
+          value: review-slo
+      - equal:
+          path: metadata.namespace
+          value: monitoring
+      - equal:
+          path: spec.service
+          value: review
+      - equal:
+          path: spec.labels
+          value:
+            team: platform
+            service: review
+            namespace: review
+      - equal:
+          path: spec.slos[0].name
+          value: availability
+      - equal:
+          path: spec.slos[1].name
+          value: latency
+      - matchRegex:
+          path: spec.slos[0].sli.events.errorQuery
+          pattern: 'http_server_request_duration_seconds_count\{app="review", namespace="review", http_response_status_code=~"5\.\."\}\[\{\{\.window\}\}\]'
+      - matchRegex:
+          path: spec.slos[1].sli.events.errorQuery
+          pattern: 'http_server_request_duration_seconds_bucket\{app="review", namespace="review", le="0\.5"\}'
+      - equal:
+          path: spec.slos[0].alerting.name
+          value: ReviewHighErrorRate
+      - equal:
+          path: spec.slos[0].alerting.pageAlert.disable
+          value: true
+
+  - it: defaults to the release namespace
+    set:
+      service: review
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: review
+
+  - it: honours a custom selector and alert name
+    set:
+      service: review
+      selector:
+        job: review-api
+      alertNames:
+        availability: ReviewErrors
+    asserts:
+      - matchRegex:
+          path: spec.slos[0].sli.events.totalQuery
+          pattern: '\{job="review-api"\}'
+      - equal:
+          path: spec.slos[0].alerting.name
+          value: ReviewErrors
+
+  - it: drops a disabled SLO
+    set:
+      service: review
+      latency.enabled: false
+    asserts:
+      - lengthEqual:
+          path: spec.slos
+          count: 1
+
+  - it: is absent when both SLOs are disabled
+    set:
+      service: review
+      availability.enabled: false
+      latency.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0

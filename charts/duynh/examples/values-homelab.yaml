@@ -56,9 +56,11 @@ volumeMounts:
 
 service:
   port: 8080
+  appProtocol: http
   extraPorts:
     - name: grpc
       port: 9090
+      appProtocol: grpc
 
 livenessProbe:
   httpGet:

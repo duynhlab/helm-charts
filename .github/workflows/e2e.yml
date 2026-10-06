@@ -57,6 +57,29 @@ jobs:
           kubectl apply --server-side --force-conflicts -f "https://github.com/VictoriaMetrics/operator/releases/download/${VM_OPERATOR_VERSION}/crd.yaml"
           kubectl wait --for condition=established --timeout=60s crd/vmrules.operator.victoriametrics.com
 
+      # charts/slo and the duynh ci/monitoring-values.yaml render a Sloth
+      # PrometheusServiceLevel and a PrometheusRule. Versions match the homelab
+      # cluster: prometheus-operator-crds 32.0.1 (operator v0.94.1), Sloth v0.16.0.
+      - name: Install Prometheus Operator and Sloth CRDs
+        if: steps.list-changed.outputs.changed == 'true'
+        env:
+          PROM_CRDS_VERSION: 32.0.1
+          SLOTH_VERSION: v0.16.0
+        run: |
+          helm install prometheus-operator-crds \
+            oci://ghcr.io/prometheus-community/charts/prometheus-operator-crds \
+            --version "${PROM_CRDS_VERSION}"
+          kubectl apply --server-side -f "https://raw.githubusercontent.com/slok/sloth/${SLOTH_VERSION}/pkg/kubernetes/gen/crd/sloth.slok.dev_prometheusservicelevels.yaml"
+          # A CRD created a moment ago has no .status.conditions yet, and
+          # kubectl wait errors on that instead of waiting, so retry briefly.
+          for i in $(seq 1 30); do
+            kubectl wait --for condition=established --timeout=10s \
+              crd/prometheusrules.monitoring.coreos.com \
+              crd/prometheusservicelevels.sloth.slok.dev && break
+            [ "$i" -eq 30 ] && exit 1
+            sleep 2
+          done
+
       - name: Lint + install changed charts on KinD (+ helm test)
         if: steps.list-changed.outputs.changed == 'true'
         run: ct lint-and-install --config .github/configs/ct.yaml
