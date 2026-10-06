@@ -21,3 +21,24 @@ tests:
       - equal:
           path: spec.selector["app.kubernetes.io/instance"]
           value: test
+
+  - it: renders extra ports, targeting the port name by default
+    set:
+      service.extraPorts:
+        - name: grpc
+          port: 9090
+    asserts:
+      - equal:
+          path: spec.ports[1]
+          value:
+            name: grpc
+            port: 9090
+            targetPort: grpc
+            protocol: TCP
+
+  - it: is absent when service.enabled is false
+    set:
+      service.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0

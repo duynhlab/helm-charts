@@ -48,6 +48,24 @@ Selector labels
 {{- define "duynh.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "duynh.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
+{{- with .Values.extraSelectorLabels }}
+{{ toYaml . }}
+{{- end }}
+{{- end }}
+
+{{/*
+Pod labels: podLabels merged under the common labels, so a key set in both
+renders once and the selector labels always win.
+*/}}
+{{- define "duynh.podLabels" -}}
+{{- toYaml (merge (include "duynh.labels" . | fromYaml) .Values.podLabels) }}
+{{- end }}
+
+{{/*
+Name of the main container
+*/}}
+{{- define "duynh.containerName" -}}
+{{- default .Chart.Name .Values.containerName | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*

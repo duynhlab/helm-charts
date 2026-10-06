@@ -86,3 +86,8 @@ jobs:
 
       - name: Template dry-run duynh (examples/values-orders.yaml)
         run: helm template test charts/duynh/ --namespace test -f charts/duynh/examples/values-orders.yaml
+
+      - name: Lint + template duynh (ci/homelab-values.yaml)
+        run: |
+          helm lint charts/duynh/ -f charts/duynh/ci/homelab-values.yaml
+          helm template review charts/duynh/ --namespace review -f charts/duynh/ci/homelab-values.yaml
