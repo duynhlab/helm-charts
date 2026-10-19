@@ -7,3 +7,6 @@ junit*.xml
 
 # macOS
 .DS_Store
+
+# Python rule-contract tests
+__pycache__/

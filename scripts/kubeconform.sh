@@ -55,6 +55,8 @@ validate charts/duynh orders -f charts/duynh/examples/values-orders.yaml
 validate charts/duynh homelab -f charts/duynh/examples/values-homelab.yaml
 validate charts/vm-rules job-remap --namespace monitoring \
   --set jobNames.kubelet=kubernetes-nodes --set jobNames.node-exporter=prometheus-node-exporter
+validate charts/vm-rules platform-bundles --namespace monitoring -f charts/vm-rules/examples/platform-values.yaml
+validate charts/vm-rules temporal-bundle --namespace monitoring -f charts/vm-rules/examples/temporal-values.yaml
 validate charts/slo availability-only --set service=test \
   --set latency.enabled=false --set selector.job=test-api
 validate charts/slo monitoring-namespace --set service=test --set namespace=monitoring

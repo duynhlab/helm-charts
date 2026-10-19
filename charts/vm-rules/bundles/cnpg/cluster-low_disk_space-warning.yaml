@@ -1,0 +1,34 @@
+# Generated from cnpg/cluster chart v0.6.0 (helm template) with fullnameOverride=@@CNPG_CLUSTER@@, namespace=product.
+# Do not edit expr by hand; re-render from chart and split, or bump chart version in README.
+# INERT ON KIND (measured 2026-08-31): kubelet_volume_stats_* returns zero series
+# because local-path PVs are hostPath and kubelet collects no volume stats for
+# them, so this rule cannot fire here. Correct on any CSI cluster — kept, not
+# deleted. This file is chart-generated, so this note will be lost on the next
+# re-render; the durable record is in docs/observability/alerting/alert-catalog.md.
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: @@CNPG_CLUSTER@@-cluster-low-disk-space-warning
+  namespace: @@CNPG_NAMESPACE@@
+  labels:
+    app.kubernetes.io/part-of: cnpg-chart-rules
+    cnpg.io/cluster: @@CNPG_CLUSTER@@
+    platform.duynhlab.dev/source: cloudnative-pg-charts-cluster
+    platform.duynhlab.dev/chart-version: 0.6.0
+spec:
+  groups:
+  - name: cloudnative-pg/@@CNPG_CLUSTER@@
+    rules:
+    - alert: CNPGClusterLowDiskSpaceWarning
+      annotations:
+        summary: CNPG Instance is running out of disk space.
+        description: CloudNativePG Cluster "@@CNPG_NAMESPACE@@/@@CNPG_CLUSTER@@" is running low on disk space. Check attached PVCs.
+        runbook_url: https://github.com/duynhlab/homelab/blob/main/docs/observability/runbooks/postgresql/CNPGClusterLowDiskSpaceWarning.md
+      expr: "max(max by(persistentvolumeclaim) (1 - kubelet_volume_stats_available_bytes{namespace=\"@@CNPG_NAMESPACE@@\", persistentvolumeclaim=~\"@@CNPG_CLUSTER@@-([1-9][0-9]*)$\"} / kubelet_volume_stats_capacity_bytes{namespace=\"@@CNPG_NAMESPACE@@\", persistentvolumeclaim=~\"@@CNPG_CLUSTER@@-([1-9][0-9]*)$\"})) * 100 > 70 OR\nmax(max by(persistentvolumeclaim) (1 - kubelet_volume_stats_available_bytes{namespace=\"@@CNPG_NAMESPACE@@\", persistentvolumeclaim=~\"@@CNPG_CLUSTER@@-([1-9][0-9]*)$-wal\"} / kubelet_volume_stats_capacity_bytes{namespace=\"@@CNPG_NAMESPACE@@\", persistentvolumeclaim=~\"@@CNPG_CLUSTER@@-([1-9][0-9]*)$-wal\"})) * 100 > 70 OR\nmax(sum by (namespace,persistentvolumeclaim) (kubelet_volume_stats_used_bytes{namespace=\"@@CNPG_NAMESPACE@@\", persistentvolumeclaim=~\"@@CNPG_CLUSTER@@-([1-9][0-9]*)$-tbs.*\"})\n    /\n    sum by (namespace,persistentvolumeclaim) (kubelet_volume_stats_capacity_bytes{namespace=\"@@CNPG_NAMESPACE@@\", persistentvolumeclaim=~\"@@CNPG_CLUSTER@@-([1-9][0-9]*)$-tbs.*\"})\n    *\n    on(namespace, persistentvolumeclaim) group_left(volume)\n    kube_pod_spec_volumes_persistentvolumeclaims_info{pod=~\"\
+        @@CNPG_CLUSTER@@-([1-9][0-9]*)$\"}\n) * 100 > 70"
+      for: 5m
+      labels:
+        severity: warning
+        namespace: @@CNPG_NAMESPACE@@
+        cnpg_cluster: @@CNPG_CLUSTER@@

@@ -45,11 +45,12 @@ lint-vm-rules: ## helm lint charts/vm-rules: default + all rule groups enabled
 	helm lint charts/vm-rules
 	helm lint charts/vm-rules -f charts/vm-rules/ci/default-values.yaml
 
-check-rules: ## promtool check charts/vm-rules/rules/*.yml (needs docker or podman)
-	$(CONTAINER) run --rm -v "$(PWD)/charts/vm-rules/rules:/rules:ro" \
-	  --entrypoint promtool prom/prometheus:v3.7.3 check rules \
-	  /rules/certmanager.yml /rules/fluxcd.yml /rules/kubelet.yml \
-	  /rules/kubernetes.yml /rules/node-exporter.yml /rules/redis.yml
+check-rules: ## validate rendered rules with promtool + VMAlert (needs PyYAML and docker/podman)
+	CONTAINER="$(CONTAINER)" bash scripts/check-vm-rules.sh
+
+.PHONY: test-vm-rules
+test-vm-rules: ## compare bundled rules with the homelab baseline (needs Python + PyYAML)
+	python3 -m unittest discover -s scripts/tests -p 'test_vm_rules.py' -v
 
 template: ## render the chart with gRPC enabled
 	helm template test $(CHART) --set name=test --set image.repository=ghcr.io/duynhlab/x --set service.grpc.enabled=true

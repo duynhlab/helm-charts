@@ -1,0 +1,33 @@
+# Generated from cnpg/cluster chart v0.6.0 (helm template) with fullnameOverride=@@CNPG_CLUSTER@@, namespace=product.
+# Do not edit expr by hand; re-render from chart and split, or bump chart version in README.
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: @@CNPG_CLUSTER@@-cluster-offline
+  namespace: @@CNPG_NAMESPACE@@
+  labels:
+    app.kubernetes.io/part-of: cnpg-chart-rules
+    cnpg.io/cluster: @@CNPG_CLUSTER@@
+    platform.duynhlab.dev/source: cloudnative-pg-charts-cluster
+    platform.duynhlab.dev/chart-version: 0.6.0
+spec:
+  groups:
+  - name: cloudnative-pg/@@CNPG_CLUSTER@@
+    rules:
+    - alert: CNPGClusterOffline
+      annotations:
+        summary: CNPG Cluster has no running instances!
+        description: 'CloudNativePG Cluster "@@CNPG_NAMESPACE@@/@@CNPG_CLUSTER@@" has no ready instances.
+
+
+          Having an offline cluster means your applications will not be able to access the database, leading to
+
+          potential service disruption and/or data loss.'
+        runbook_url: https://github.com/duynhlab/homelab/blob/main/docs/observability/runbooks/postgresql/CNPGClusterOffline.md
+      expr: (count(cnpg_collector_up{namespace="@@CNPG_NAMESPACE@@",pod=~"@@CNPG_CLUSTER@@-([1-9][0-9]*)$"}) OR on() vector(0)) == 0
+      for: 5m
+      labels:
+        severity: critical
+        namespace: @@CNPG_NAMESPACE@@
+        cnpg_cluster: @@CNPG_CLUSTER@@

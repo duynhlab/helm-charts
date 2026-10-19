@@ -1,0 +1,31 @@
+# Generated from cnpg/cluster chart v0.6.0 (helm template) with fullnameOverride=@@CNPG_CLUSTER@@, namespace=product.
+# Do not edit expr by hand; re-render from chart and split, or bump chart version in README.
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: @@CNPG_CLUSTER@@-cluster-logical-replication-errors
+  namespace: @@CNPG_NAMESPACE@@
+  labels:
+    app.kubernetes.io/part-of: cnpg-chart-rules
+    cnpg.io/cluster: @@CNPG_CLUSTER@@
+    platform.duynhlab.dev/source: cloudnative-pg-charts-cluster
+    platform.duynhlab.dev/chart-version: 0.6.0
+spec:
+  groups:
+  - name: cloudnative-pg/@@CNPG_CLUSTER@@
+    rules:
+    - alert: CNPGClusterLogicalReplicationErrors
+      annotations:
+        summary: CNPG Cluster logical replication errors detected
+        description: 'CloudNativePG Cluster''s "@@CNPG_NAMESPACE@@/@@CNPG_CLUSTER@@" "{{ .subname }}" subscription has experienced {{ $value }} errors.
+
+
+          This includes both apply errors (during normal replication) and sync errors (during initial table sync). Errors indicate data consistency issues that need immediate attention to prevent data divergence.'
+        runbook_url: https://github.com/duynhlab/homelab/blob/main/docs/observability/runbooks/postgresql/CNPGClusterLogicalReplicationErrors.md
+      expr: label_replace(increase(max by (namespace, job, subname) (cnpg_pg_stat_subscription_apply_error_count + cnpg_pg_stat_subscription_sync_error_count)[5m]), "cluster", "$1", "job", ".+/(.+)") > 0
+      for: 1m
+      labels:
+        severity: warning
+        namespace: @@CNPG_NAMESPACE@@
+        cnpg_cluster: @@CNPG_CLUSTER@@
