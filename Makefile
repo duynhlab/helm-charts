@@ -1,4 +1,5 @@
 CHART ?= charts/mop
+KUBERNETES_VERSION ?= 1.35.8
 # promtool runs in a container; podman works as a drop-in for docker here.
 CONTAINER ?= docker
 
@@ -6,6 +7,10 @@ CONTAINER ?= docker
 
 help: ## show available targets
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  %-16s %s\n", $$1, $$2}'
+
+.PHONY: kubeconform
+kubeconform: ## validate rendered charts and feature scenarios against Kubernetes/CRD schemas
+	KUBERNETES_VERSION="$(KUBERNETES_VERSION)" bash scripts/kubeconform.sh
 
 docs: ## regenerate chart READMEs with helm-docs
 	helm-docs --chart-search-root charts
