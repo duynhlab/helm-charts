@@ -207,6 +207,24 @@ until the new rule set has loaded successfully, and keep Sloth-selected rules in
 both selector states. See the [Kind migration test](../../scripts/e2e/test_vm_rules_migration.py)
 for the integration gate and the homelab alerting migration runbook for rollout.
 
+For a disposable integration run, create `kind-vm-rules-migration` with
+`kind create cluster --name vm-rules-migration --kubeconfig /tmp/vm-rules.config`,
+export `KUBECONFIG=/tmp/vm-rules.config`, and install Prometheus Operator CRDs
+32.0.1 plus VM Operator chart 0.68.1 with converter ownership enabled. The
+`rule-migration` job in `.github/workflows/e2e.yml` contains the exact commands.
+Then run:
+
+```bash
+python3 scripts/e2e/test_vm_rules_migration.py --evidence /tmp/vm-rules-evidence.json
+```
+
+Local evidence (2026-10-20): Kind Kubernetes 1.37.0, VM Operator 0.75.0 and VMAlert
+1.152.0 loaded 319 rules (315 baseline plus four test sentinels), all `health=ok`,
+through staging, cutover, rollback and cleanup. SLO sentinel `activeAt` stayed
+unchanged; the recording sentinel returned 7. This tests migration mechanics on
+an isolated datasource, not production metric coverage. CI repeats this gate on
+Kubernetes 1.35.8. Schema validation also covers Kubernetes 1.35.8 and 1.36.4.
+
 ## Installation
 
 ### List available versions (OCI)
