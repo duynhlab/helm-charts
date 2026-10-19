@@ -1,6 +1,6 @@
 # vm-rules
 
-![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 0.2.0](https://img.shields.io/badge/Version-0.2.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 Static VictoriaMetrics alerting rules packaged as VMRule custom resources.
 Each rule group ships as a standalone Prometheus rule file and renders into
@@ -31,9 +31,10 @@ ruleSelectorLabels:
 
 > Already running prometheus-operator too? Keep using `VMRule` — the operator's
 > `prometheus-converter` only flows `PrometheusRule` → `VMRule`, so native `VMRule`
-> objects are never duplicated.
+> objects are not converted again. During migration, explicitly select either the old
+> converted rules or the new native rules; running both still duplicates evaluation.
 
-## Bundled rule groups
+## Original rule groups
 
 | Group | File | Alerts | Enabled by default | Metrics source |
 |-------|------|--------|--------------------|----------------|
@@ -96,6 +97,116 @@ The key is the job name as written in `rules/*.yml`; the value is yours. Leaving
 check**: it is scraped through a `VMServiceScrape`, where the job label follows the
 Service name and commonly ends up as `<release>-prometheus-node-exporter`.
 
+## Homelab rule bundles
+
+Version 0.2 adds opt-in bundles without changing the original defaults. Use
+`defaultRules.enabled: false` when installing the homelab bundles so the original
+sample rules do not evaluate alongside them. `jobNames` only remaps the original
+`rules` map; homelab expressions are preserved verbatim.
+
+The catalog was imported from homelab commit
+pinned in the baseline fixture (the full commit and source paths are recorded in
+[`provenance.json`](../../scripts/tests/fixtures/vm-rules/provenance.json)). It contains
+**71 resources, 255 alerts and 60 recording rules** after rendering the platform
+and Temporal examples. This is a repository inventory, not a count of firing or
+series-backed alerts. Rules intentionally disabled in homelab are not enabled by
+these bundles. Sloth, the `slo` chart and Compose rules remain separately owned.
+
+| Bundle | Contents |
+|---|---|
+| `kubernetes` | API server, control plane, nodes, workloads, pod resources, network and owner recording rules |
+| `microservices` | RED/gRPC/runtime rules, inventory, checkout and RFC-0021 recording/alert rules |
+| `postgres` | Backups, replication health, deep signals, role membership, pg_stat_ch and DR availability |
+| `envoy-gateway`, `keycloak`, `valkey` | Edge, identity and cache alerts/recording rules |
+| `victoriametrics`, `observability` | VM self-monitoring, ClickHouse, OTel, Pyroscope and policy-reporter |
+| `gitops`, `kyverno`, `keda`, `watchdog` | Platform reconciliation, policy, autoscaling and pipeline signals |
+| `temporal` | Server and worker alerts, installed independently after Temporal |
+
+[Platform values](examples/platform-values.yaml) and [Temporal values](examples/temporal-values.yaml)
+are the deployment examples. Bundle resources use the release namespace. CNPG cluster
+resources use their configured namespace; operator rules use `cnpg.operator.namespace`.
+Namespaces must already exist. Each resource keeps its original metadata labels and
+annotations, adds chart management labels, and prefixes its name with the release
+fullname. `ruleSelectorLabels` take precedence on resource metadata only; they never
+change labels on the alerts or recording rules.
+
+### CNPG without copied cluster files
+
+```yaml
+defaultRules:
+  enabled: false
+bundles:
+  postgres:
+    enabled: true
+cnpg:
+  clusters:
+    product-db:
+      namespace: product
+      haExcludedJob: product/product-db-replica
+    platform-db:
+      namespace: platform
+  operator:
+    enabled: true
+    namespace: cloudnative-pg
+```
+
+Each cluster renders the same 15 active definitions with explicit cluster/namespace
+substitution. `haExcludedJob` defaults to empty and only excludes a deliberately
+single-instance job from the two HA alerts. The operator health rules are emitted
+once, independently of the cluster map. This preserves the homelab HA exception
+without globally changing thresholds or selectors.
+
+The other Postgres bundle rules retain their homelab-specific cluster selectors;
+adding a CNPG cluster does not automatically retarget backup, DR or membership rules.
+The bundles are a tested homelab catalog, not a generic upstream monitoring mixin.
+
+### Add site-specific rules
+
+`extraRules.<key>` accepts `groups`, optional `namespace`, and resource-level
+`labels` / `annotations`. Each key creates one VMRule. Use standard VMRule group and
+rule fields; an extra resource cannot collide with a bundled or original resource.
+
+```yaml
+extraRules:
+  example:
+    groups:
+      - name: example
+        interval: 30s
+        rules:
+          - alert: ExampleUnavailable
+            expr: up{job="example"} == 0
+            for: 5m
+            annotations:
+              summary: 'Example target {{ $labels.instance }} is down'
+```
+
+Rule files and extraRules are data: Helm never evaluates their Prometheus annotation
+templates with `tpl`. The reserved `charts.duynhlab.dev/source-name` annotation maps
+each rendered object back to its imported resource for parity checks.
+
+### Verification and migration
+
+```bash
+python3 -m pip install PyYAML==6.0.3
+make test-vm-rules
+helm unittest charts/vm-rules --strict
+make check-rules CONTAINER=podman
+make kubeconform
+```
+
+The contract test compares every imported `spec` and original metadata field with
+an immutable source snapshot. It preserves group intervals, order, annotation
+strings and intentional same-name recording rules. `check-rules` discovers rendered
+specs automatically and runs VMAlert v1.152.0 `-dryRun` on all of them. Promtool also
+checks the PromQL rules; the four CNPG logical-replication error/stopped alert types
+use MetricsQL operations and are validated by VMAlert only.
+
+Use a staged selector cutover when replacing PrometheusRules. The converter owns
+its generated VMRules; do not transfer those objects to Helm. Keep the old objects
+until the new rule set has loaded successfully, and keep Sloth-selected rules in
+both selector states. See the [Kind migration test](../../scripts/e2e/test_vm_rules_migration.py)
+for the integration gate and the homelab alerting migration runbook for rollout.
+
 ## Installation
 
 ### List available versions (OCI)
@@ -107,7 +218,7 @@ crane ls ghcr.io/duynhlab/helm-charts/vm-rules
 ### OCI (GHCR)
 
 ```console
-helm install vm-rules oci://ghcr.io/duynhlab/helm-charts/vm-rules --version 0.1.0 -n monitoring
+helm install vm-rules oci://ghcr.io/duynhlab/helm-charts/vm-rules --version 0.2.0 -n monitoring
 ```
 
 ### Helm repo (GitHub Pages)
@@ -115,13 +226,13 @@ helm install vm-rules oci://ghcr.io/duynhlab/helm-charts/vm-rules --version 0.1.
 ```console
 helm repo add duynhlab https://duynhlab.github.io/helm-charts
 helm repo update
-helm install vm-rules duynhlab/vm-rules --version 0.1.0 -n monitoring
+helm install vm-rules duynhlab/vm-rules --version 0.2.0 -n monitoring
 ```
 
 ### Install from local chart
 
 ```console
-helm pull oci://ghcr.io/duynhlab/helm-charts/vm-rules --untar --version 0.1.0
+helm pull oci://ghcr.io/duynhlab/helm-charts/vm-rules --untar --version 0.2.0
 helm install vm-rules ./vm-rules -n monitoring
 ```
 
@@ -164,6 +275,10 @@ helm uninstall vm-rules -n monitoring
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| bundles | object | `{"envoy-gateway":{"enabled":false},"gitops":{"enabled":false},"keda":{"enabled":false},"keycloak":{"enabled":false},"kubernetes":{"enabled":false},"kyverno":{"enabled":false},"microservices":{"enabled":false},"observability":{"enabled":false},"postgres":{"enabled":false},"temporal":{"enabled":false},"valkey":{"enabled":false},"victoriametrics":{"enabled":false},"watchdog":{"enabled":false}}` | Opt-in homelab rule bundles. These preserve the validated homelab expressions; jobNames only affects the original rules map below, not these bundles. |
+| cnpg | object | `{"clusters":{},"operator":{"enabled":false,"namespace":"cloudnative-pg"}}` | Each configured cluster gets the 15 active CNPG rules. Namespace is required. haExcludedJob only excludes a deliberately single-instance job from HA alerts. |
+| defaultRules | object | `{"enabled":true}` | Keep the original six rule groups available without changing existing installs. |
+| extraRules | object | `{}` | Additional VMRule objects keyed by name suffix. No Helm tpl evaluation. Each entry accepts groups (required), namespace (defaults to release namespace), labels and annotations (resource metadata, not alert labels). |
 | fullnameOverride | string | `""` |  |
 | jobNames | map | `{}` | Remap the job names the bundled rules match on. Key = job name as written in rules/*.yml, value = the job name your scrape config actually produces. Leave empty when the defaults already match. Find your real job names with:   count by (job) (rest_client_requests_total)   count by (job) (node_time_seconds) |
 | nameOverride | string | `""` |  |

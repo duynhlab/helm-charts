@@ -1,3 +1,4 @@
+{{- if .Values.defaultRules.enabled }}
 {{- range $name, $rule := .Values.rules }}
 {{- if $rule.enabled }}
 ---
@@ -26,6 +27,9 @@ metadata:
   and lets it drop straight in as the VMRule spec.
 */}}
 {{- $body := $.Files.Get (printf "rules/%s" $rule.file) }}
+{{- if not $body }}
+{{- fail (printf "rules.%s.file: bundled rule file %q is missing or empty" $name $rule.file) }}
+{{- end }}
 {{- /*
   Two passes through a sentinel so a swap (kubelet -> node-exporter while
   node-exporter -> something-else) cannot hit the same matcher twice. A single
@@ -40,5 +44,6 @@ metadata:
 {{- end }}
 spec:
 {{ $body | indent 2 }}
+{{- end }}
 {{- end }}
 {{- end }}

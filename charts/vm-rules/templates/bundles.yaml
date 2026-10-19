@@ -1,0 +1,43 @@
+{{- $root := . }}
+{{- $seen := dict }}
+{{- if .Values.defaultRules.enabled }}
+{{- range $name, $rule := .Values.rules }}
+{{- if $rule.enabled }}
+{{- $_ := set $seen (printf "%s/%s-%s" $root.Release.Namespace (include "vm-rules.fullname" $root) $name) true }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- range $bundle, $config := .Values.bundles }}
+{{- if $config.enabled }}
+{{- $files := $root.Files.Glob (printf "bundles/%s/*.yaml" $bundle) }}
+{{- if not $files }}{{ fail (printf "unknown or empty bundle %q" $bundle) }}{{ end }}
+{{- range $path, $_ := $files }}
+{{- $source := $root.Files.Get $path | fromYaml }}
+{{ include "vm-rules.bundledResource" (dict "root" $root "seen" $seen "source" $source "namespace" $root.Release.Namespace) }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- range $cluster, $config := .Values.cnpg.clusters }}
+{{- $namespace := required (printf "cnpg.clusters.%s.namespace is required" $cluster) $config.namespace }}
+{{- $exclusion := "" }}
+{{- with $config.haExcludedJob }}{{ $exclusion = printf ",job!=%q" . }}{{ end }}
+{{- range $path, $_ := $root.Files.Glob "bundles/cnpg/*.yaml" }}
+{{- $body := $root.Files.Get $path | replace "@@CNPG_CLUSTER@@" $cluster | replace "@@CNPG_NAMESPACE@@" $namespace }}
+{{- /* HA expressions are plain YAML scalars; the matcher quotes are PromQL. */}}
+{{- $body = $body | replace "@@CNPG_HA_EXCLUSION@@" $exclusion }}
+{{- $source := $body | fromYaml }}
+{{ include "vm-rules.bundledResource" (dict "root" $root "seen" $seen "source" $source "namespace" $namespace) }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.cnpg.operator.enabled }}
+{{- $source := .Files.Get "bundles/cnpg-operator/operator-health.yaml" | fromYaml }}
+{{ include "vm-rules.bundledResource" (dict "root" $root "seen" $seen "source" $source "namespace" .Values.cnpg.operator.namespace) }}
+{{- end }}
+
+{{- range $key, $rule := .Values.extraRules }}
+{{- $source := dict "metadata" (dict "name" $key "labels" (default dict $rule.labels) "annotations" (default dict $rule.annotations)) "spec" (dict "groups" $rule.groups) }}
+{{ include "vm-rules.bundledResource" (dict "root" $root "seen" $seen "source" $source "namespace" (default $root.Release.Namespace $rule.namespace)) }}
+{{- end }}

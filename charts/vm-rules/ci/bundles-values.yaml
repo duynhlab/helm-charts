@@ -1,0 +1,53 @@
+# Exercise all bundles, CNPG and extraRules. Cross-namespace targets exist in every Kind cluster.
+bundles:
+  envoy-gateway:
+    enabled: true
+  gitops:
+    enabled: true
+  keda:
+    enabled: true
+  keycloak:
+    enabled: true
+  kubernetes:
+    enabled: true
+  kyverno:
+    enabled: true
+  microservices:
+    enabled: true
+  observability:
+    enabled: true
+  postgres:
+    enabled: true
+  valkey:
+    enabled: true
+  victoriametrics:
+    enabled: true
+  watchdog:
+    enabled: true
+  temporal:
+    enabled: true
+cnpg:
+  clusters:
+    platform-db:
+      namespace: default
+    product-db:
+      haExcludedJob: product/product-db-replica
+      namespace: default
+  operator:
+    enabled: true
+    namespace: default
+defaultRules:
+  enabled: false
+ruleSelectorLabels:
+  rules.duynhlab.dev/source: chart
+extraRules:
+  custom:
+    groups:
+    - name: custom
+      rules:
+      - alert: ExampleAlert
+        expr: vector(0) > 0
+        labels:
+          severity: info
+        annotations:
+          summary: '{{ $labels.instance }}'

@@ -11,7 +11,7 @@ Published to GHCR (OCI) and [GitHub Pages](https://duynhlab.github.io/helm-chart
 | [`grafana-dashboards`](charts/grafana-dashboards) | 0.2.2 | Grafana dashboards as ConfigMaps for sidecar auto-provisioning. |
 | [`duynh`](charts/duynh) | 0.3.1 | Stateless microservices on Amazon EKS — Deployment, Service, HPA, PDB, ServiceAccount, Envoy Gateway HTTPRoute, Sloth SLO. |
 | [`slo`](charts/slo) | 0.1.0 | Request SLOs for one HTTP service — Sloth `PrometheusServiceLevel` plus burn-rate `PrometheusRule` with a minimum-events guard. |
-| [`vm-rules`](charts/vm-rules) | 0.1.0 | Static VictoriaMetrics alerting rules as VMRule objects — cert-manager, Flux, kubelet, Kubernetes workloads, node-exporter, Redis. |
+| [`vm-rules`](charts/vm-rules) | 0.2.0 | VictoriaMetrics rule bundles, parameterized CNPG clusters and custom alert/recording rules. |
 
 See each chart's README for configuration details.
 
@@ -46,7 +46,7 @@ helm install <svc>-slo oci://ghcr.io/duynhlab/helm-charts/slo --version 0.1.0 \
   --namespace <svc> --set service=<svc> --set namespace=monitoring
 
 # vm-rules (needs the VictoriaMetrics operator CRDs)
-helm install vm-rules oci://ghcr.io/duynhlab/helm-charts/vm-rules --version 0.1.0 -n monitoring
+helm install vm-rules oci://ghcr.io/duynhlab/helm-charts/vm-rules --version 0.2.0 -n monitoring
 ```
 
 ### Helm repo (GitHub Pages)
@@ -57,7 +57,7 @@ helm repo update
 helm install <release> duynhlab/mop --version 0.17.2 --set name=<svc> ...
 helm install grafana-dashboards duynhlab/grafana-dashboards --version 0.2.2
 helm install <release> duynhlab/duynh --version 0.3.1 --set image.repository=<image>
-helm install vm-rules duynhlab/vm-rules --version 0.1.0 -n monitoring
+helm install vm-rules duynhlab/vm-rules --version 0.2.0 -n monitoring
 ```
 
 ### Install from local chart
@@ -97,7 +97,8 @@ make kubeconform # strict Kubernetes and CRD schema validation (needs helm + kub
 make lint       # helm lint $(CHART): default + gRPC+SLO
 make template   # render mop with gRPC enabled
 make docs       # regenerate chart READMEs (helm-docs)
-make check-rules       # promtool check charts/vm-rules/rules/*.yml
+make check-rules       # promtool + VMAlert check rendered rules (needs PyYAML)
+make test-vm-rules     # exact homelab rule parity and chart interface tests
 make lint-vm-rules     # helm lint vm-rules: default + all rule groups
 make e2e        # KinD: VM CRDs + helmfile sync (mop + worker + grafana-dashboards + vm-rules), assert, test, teardown
 make e2e-sync   # helmfile sync only (existing cluster)

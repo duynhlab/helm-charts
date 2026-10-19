@@ -1,0 +1,7 @@
+defaultRules:
+  enabled: false
+bundles:
+  temporal:
+    enabled: true
+ruleSelectorLabels:
+  rules.duynhlab.dev/source: chart

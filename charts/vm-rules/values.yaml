@@ -1,6 +1,45 @@
 nameOverride: ""
 fullnameOverride: ""
 
+# -- Keep the original six rule groups available without changing existing installs.
+defaultRules:
+  enabled: true
+
+# -- Opt-in homelab rule bundles. These preserve the validated homelab expressions;
+# jobNames only affects the original rules map below, not these bundles.
+bundles:
+  kubernetes: {enabled: false}
+  microservices: {enabled: false}
+  envoy-gateway: {enabled: false}
+  keycloak: {enabled: false}
+  victoriametrics: {enabled: false}
+  observability: {enabled: false}
+  valkey: {enabled: false}
+  gitops: {enabled: false}
+  kyverno: {enabled: false}
+  keda: {enabled: false}
+  postgres: {enabled: false}
+  watchdog: {enabled: false}
+  temporal: {enabled: false}
+
+# -- Each configured cluster gets the 15 active CNPG rules. Namespace is required.
+# haExcludedJob only excludes a deliberately single-instance job from HA alerts.
+cnpg:
+  clusters: {}
+    # product-db:
+    #   namespace: product
+    #   haExcludedJob: product/product-db-replica
+    # platform-db:
+    #   namespace: platform
+  operator:
+    enabled: false
+    namespace: cloudnative-pg
+
+# -- Additional VMRule objects keyed by name suffix. No Helm tpl evaluation.
+# Each entry accepts groups (required), namespace (defaults to release namespace),
+# labels and annotations (resource metadata, not alert labels).
+extraRules: {}
+
 # -- (map) Labels added to every VMRule so VMAlert's `ruleSelector` can discover
 # them. Leave empty when VMAlert uses `ruleSelector: {}` (selects everything).
 ruleSelectorLabels: {}
