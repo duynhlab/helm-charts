@@ -69,6 +69,24 @@ helm install <release> ./charts/duynh --set image.repository=<image>
 helm install vm-rules ./charts/vm-rules -n monitoring
 ```
 
+## Develop
+
+Prerequisites: `kind`, `kubectl`, `helm`, `helmfile`, `docker`.
+
+```bash
+# one-time setup
+go install github.com/helmfile/helmfile/v2/cmd/helmfile@latest
+
+# common checks
+make help
+make lint-all
+make kubeconform
+make check-rules
+make e2e
+```
+
+Use `make lint CHART=charts/<chart>` or `make template CHART=charts/<chart>` for a focused chart check.
+
 ## Upgrade
 
 ```console
@@ -80,39 +98,3 @@ helm upgrade <release> oci://ghcr.io/duynhlab/helm-charts/<chart>
 ```console
 helm uninstall <release>
 ```
-
-## Develop
-
-Prerequisites for local e2e: `kind`, `kubectl`, `helm`, `helmfile`, `docker`.
-
-```bash
-# helmfile (one-time)
-go install github.com/helmfile/helmfile/v2/cmd/helmfile@latest
-```
-
-```bash
-make help       # list targets
-make lint-all   # lint + template every chart (like CI)
-make kubeconform # strict Kubernetes and CRD schema validation (needs helm + kubeconform)
-make lint       # helm lint $(CHART): default + gRPC+SLO
-make template   # render mop with gRPC enabled
-make docs       # regenerate chart READMEs (helm-docs)
-make check-rules       # promtool check charts/vm-rules/rules/*.yml
-make lint-vm-rules     # helm lint vm-rules: default + all rule groups
-make e2e        # KinD: VM CRDs + helmfile sync (mop + worker + grafana-dashboards + vm-rules), assert, test, teardown
-make e2e-sync   # helmfile sync only (existing cluster)
-```
-
-Schema validation uses kubeconform v0.8.0 (CI: Helm v3.16.0). Install these tools
-locally, then run `make kubeconform`; use `make kubeconform KUBERNETES_VERSION=1.36.4`
-to select another Kubernetes version. The default is 1.35.8; CI checks both versions
-to match the E2E matrix. Internet access is required to download schemas.
-
-The script validates chart defaults, each `ci/*-values.yaml` independently, and
-feature scenarios including HTTPRoute, HPA, PDB, Sloth, and the duynh examples.
-The slo chart requires a service, so its default scenario uses its CI values.
-Custom resource schemas come from CRDs-catalog at the commit pinned in
-`scripts/kubeconform.sh`; update that revision deliberately when upgrading CRDs.
-Missing schemas, empty renders, rendering errors, and invalid resources fail the
-check. Catalog schemas check structure; E2E still checks against the operator CRDs
-installed in KinD, including validations outside JSON Schema.
